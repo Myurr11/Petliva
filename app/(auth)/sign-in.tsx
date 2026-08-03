@@ -22,18 +22,30 @@ export default function SignIn() {
 
   function afterAuth() {
     setAuthed(true);
-    router.replace(hasOnboarded ? "/(app)/home" : "/(onboarding)/profile");
+    router.replace(hasOnboarded ? "/(app)/(tabs)/home" : "/(onboarding)/profile");
   }
 
   async function handleEmailContinue() {
     if (!email || !password) return;
     setLoading(true);
     try {
-      const { error } =
-        mode === "signUp"
-          ? await supabase.auth.signUp({ email, password })
-          : await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      if (mode === "signUp") {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        if (!data.session) {
+          // "Confirm email" is on in the Supabase project — the account
+          // exists but there's no active session until the link is clicked.
+          Alert.alert(
+            "Check your email",
+            "We sent a confirmation link to " + email + ". Click it, then come back and log in here."
+          );
+          setMode("signIn");
+          return;
+        }
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      }
       setUser({ email });
       afterAuth();
     } catch (e: any) {

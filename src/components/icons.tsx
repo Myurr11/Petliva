@@ -24,5 +24,12 @@ export const ChevronRight = (p: IconProps) => <Feather name="chevron-right" size
 export const ChevronLeft = (p: IconProps) => <Feather name="chevron-left" size={p.size ?? 20} color={p.color ?? "#000"} />;
 export const Mail = (p: IconProps) => <Feather name="mail" size={p.size ?? 20} color={p.color ?? "#000"} />;
 export const X = (p: IconProps) => <Feather name="x" size={p.size ?? 20} color={p.color ?? "#000"} />;
+export const Home = (p: IconProps) => <Feather name="home" size={p.size ?? 20} color={p.color ?? "#000"} />;
+export const BarChart = (p: IconProps) => <Feather name="bar-chart-2" size={p.size ?? 20} color={p.color ?? "#000"} />;
+export const Package = (p: IconProps) => <MaterialCommunityIcons name="package-variant" size={p.size ?? 20} color={p.color ?? "#000"} />;
+export const Flame = (p: IconProps) => <Feather name="zap" size={p.size ?? 20} color={p.color ?? "#000"} />;
+export const TrendingUp = (p: IconProps) => <Feather name="trending-up" size={p.size ?? 20} color={p.color ?? "#000"} />;
+export const AlertCircle = (p: IconProps) => <Feather name="alert-circle" size={p.size ?? 20} color={p.color ?? "#000"} />;
+export const ChevronDown = (p: IconProps) => <Feather name="chevron-down" size={p.size ?? 20} color={p.color ?? "#000"} />;
 
 export type IconComponent = (p: IconProps) => React.ReactElement;

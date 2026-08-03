@@ -10,8 +10,8 @@ import { colors, fonts } from "@/theme/tokens";
 import { insertFeedingLog } from "@/lib/supabase";
 
 export default function LogMeal() {
-  const plan = useAppStore((s) => s.plan);
-  const petId = useAppStore((s) => s.petId);
+  const activePetId = useAppStore((s) => s.activePetId);
+  const plan = useAppStore((s) => (s.activePetId ? s.pets[s.activePetId]?.plan : undefined)) ?? { foodName: "", dailyGrams: "", mealsPerDay: 3 };
   const todayTotal = useAppStore((s) => s.todayTotal());
   const addLog = useAppStore((s) => s.addLog);
 
@@ -24,16 +24,15 @@ export default function LogMeal() {
   const [saving, setSaving] = useState(false);
 
   async function save() {
+    if (!activePetId) return;
     setSaving(true);
-    const entry = addLog(grams, label);
+    const entry = addLog(activePetId, grams, label);
     // Local log is the source of truth for the ring even if the network call
     // below fails — a flaky connection shouldn't block logging a feeding.
-    if (petId) {
-      try {
-        await insertFeedingLog(petId, entry);
-      } catch {
-        // silently keep the local entry; could add a retry/sync queue later
-      }
+    try {
+      await insertFeedingLog(activePetId, entry);
+    } catch {
+      // silently keep the local entry; could add a retry/sync queue later
     }
     setSaving(false);
     router.back();

@@ -7,5 +7,5 @@ export default function Index() {
 
   if (!isAuthed) return <Redirect href="/(auth)/sign-in" />;
   if (!hasOnboarded) return <Redirect href="/(onboarding)/profile" />;
-  return <Redirect href="/(app)/home" />;
+  return <Redirect href="/(app)/(tabs)/home" />;
 }

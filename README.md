@@ -59,8 +59,13 @@ just don't commit your **service role** key anywhere in this app.
 
 ### One-time Supabase setup
 Run `supabase/schema.sql` in your project's SQL editor (Dashboard → SQL Editor).
-It creates `pets`, `feeding_plans`, `feeding_logs`, and RLS policies scoped to
-`auth.uid()`.
+It creates `pets`, `feeding_plans` (now with Open Pet Food Facts columns —
+brand, image, ingredients, macros), `feeding_logs`, `food_stock`, and RLS
+policies scoped to `auth.uid()`. If you already ran an earlier version of this
+schema against your project, the file has commented-out `alter table ... add
+column if not exists ...` lines near the `feeding_plans` definition — uncomment
+and run just those to pick up the new nutrition columns without touching your
+existing data.
 
 For **Google sign-in** to work you also need, in the Supabase Dashboard:
 1. Authentication → Providers → enable Google, with your OAuth client ID/secret
@@ -70,22 +75,24 @@ Email/password sign-up works out of the box with no extra config.
 
 ## What's wired up
 - Full onboarding: auth → profile → pet type → breed → weight → vaccinations → medical history (optional) → feeding plan
-- **Real Supabase auth**: email/password sign-up & login, Google OAuth via `expo-web-browser` + PKCE exchange, session restored automatically on relaunch
-- Finishing onboarding writes the pet + feeding plan to Supabase (`createPetAndPlan`); the returned `pet.id` is stored for logging
+- **Real Supabase auth**: email/password sign-up & login, Google OAuth via `expo-web-browser` + PKCE exchange, session restored automatically on relaunch (and cleared automatically if the local "authed" flag ever drifts from the real session)
+- Finishing onboarding writes the pet + feeding plan to Supabase (`createPetAndPlan`)
 - Each feeding log is written to `feeding_logs` in Supabase *and* kept locally — if the network call fails, the local entry still counts toward today's ring so a bad connection never blocks logging
-- Home screen: bowl-fill ring showing grams eaten vs. daily target, remaining grams, meals-logged count
-- All state also persists locally via Zustand + AsyncStorage as an offline cache
+- **Home** (bottom tab): pet switcher (appears once you have 2+ pets), bowl-fill ring, today's feeding log
+- **Insights** (bottom tab): 7-day streak counter, % of days all planned meals were logged, average grams/day, and a custom SVG bar chart (grams fed per day vs. daily target line) — built with `react-native-svg` directly rather than a charting library, since RN chart packages have been the single biggest source of the dependency conflicts we hit earlier in this build
+- **Food** (bottom tab): current stock remaining, estimated days left at the plan's daily rate, restock history, "Log a restock" modal with quick-select pack sizes (1/2/3/4/10/15kg)
+- **Multi-pet**: "Add pet" from the Home tab re-enters the onboarding wizard (skipping the profile step) to add a second pet; a horizontal pet switcher appears on Home once you have more than one. Each pet has its own plan, logs, and stock — all scoped by `pet_id` in Supabase, which the schema already supported from the start
+- **Food search (Open Pet Food Facts)**: the "Food name" field in onboarding now searches `world.openpetfoodfacts.org`'s free, open pet food database as you type (`src/lib/petFoodApi.ts`, `src/components/ui/FoodSearchField.tsx`). Picking a result pulls in the brand, product photo, ingredients list, and macro breakdown (protein/fat/fiber/ash %, kcal/100g) — all stored on the feeding plan and synced to Supabase. Typing something that doesn't match anything still works fine as free text; the search is additive, never required. That data then surfaces elsewhere instead of sitting unused:
+  - **Home**: food card shows the product photo, brand, and macro badges; tapping it expands the full ingredients list
+  - **Insights**: an "estimated protein fed today" card computed from grams logged × the food's protein %
+  - Coverage is crowd-sourced and uneven — well-represented global brands (Whiskas, Royal Canin's more common lines) show up reliably, but don't expect every SKU (e.g. we couldn't confirm Royal Canin Fit 32 specifically) to be there
+- All state persists locally via Zustand + AsyncStorage as an offline cache, keyed by pet
 
 ## What's still stubbed / next steps
-- **Multi-pet support**: the store assumes a single pet. If you want more than one,
-  `pet`/`plan`/`logs` need to become keyed by `petId`, and `createPetAndPlan`
-  called again per pet.
-- **Reading logs back from Supabase**: right now the home screen reads from the
-  local Zustand cache only. If you want history to sync across devices, add a
-  `fetchTodayLogs(petId)` call on mount.
-- **Notifications**: no reminder for missed meals yet — a good next feature once
-  logging feels solid, likely via `expo-notifications` scheduled off `plan.mealsPerDay`.
-- **Retry queue** for feeding logs that fail to sync while offline.
+- **Reading logs back from Supabase**: the app reads from the local Zustand cache only — it writes to Supabase but never reads history back. Fine on one device; if you want multi-device sync, add a `fetchPetsAndLogs()` call on app start that hydrates the store from Supabase instead of (or alongside) AsyncStorage.
+- **Notifications**: no reminder for missed meals yet — a good next feature, likely via `expo-notifications` scheduled off `plan.mealsPerDay`.
+- **Retry queue** for feeding logs / restocks that fail to sync while offline.
+- **Insights** currently only looks at the last 7 days and computes averages from local data; extending the chart's date range would need to pull more history from Supabase per the point above.
 
 ## Folder structure
 ```
@@ -93,19 +100,24 @@ app/
   _layout.tsx            root stack, font loading, Supabase session restore
   index.tsx               redirects based on auth/onboarding state
   (auth)/sign-in.tsx      email/password + Google OAuth
-  (onboarding)/            7-step onboarding stack
-  (app)/home.tsx           main tracking screen
-  (app)/log-meal.tsx       modal for logging a feeding
+  (onboarding)/            7-step onboarding stack (also re-entered at pet-type to add another pet)
+  (app)/_layout.tsx        stack wrapping the tab group + modals
+  (app)/(tabs)/home.tsx    bowl-fill ring, today's log, pet switcher
+  (app)/(tabs)/insights.tsx  streak, consistency %, SVG bar chart
+  (app)/(tabs)/inventory.tsx  stock remaining, days-left estimate, restock history
+  (app)/log-meal.tsx       modal: log a feeding
+  (app)/add-restock.tsx    modal: log a food restock
 src/
   theme/tokens.ts          colors, fonts, radii
-  store/useAppStore.ts      zustand store (user, pet, plan, logs, petId)
-  lib/supabase.ts          supabase client + createPetAndPlan / insertFeedingLog
+  store/useAppStore.ts      zustand store — pets keyed by id, activePetId, onboarding draft
+  lib/supabase.ts          supabase client + createPetAndPlan / insertFeedingLog / insertRestock
+  lib/petFoodApi.ts        Open Pet Food Facts search client
   components/icons.tsx     @expo/vector-icons wrapped under lucide-style names
-  components/ui/           shared Button, Chip, TextField, Ring, etc.
+  components/ui/           shared Button, Chip, TextField, Ring, FoodSearchField, etc.
   constants/data.ts        breed lists, vaccines, medical tags
   types/index.ts
 supabase/
-  schema.sql               run once in the Supabase SQL editor
+  schema.sql               run once in the Supabase SQL editor (pets, feeding_plans, feeding_logs, food_stock)
 assets/
   icon.png, adaptive-icon.png, splash-icon.png, favicon.png  (placeholder art)
 ```

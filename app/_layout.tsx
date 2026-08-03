@@ -34,14 +34,16 @@ export default function RootLayout() {
     if (fontsLoaded) SplashScreen.hideAsync();
   }, [fontsLoaded]);
 
-  // Restore auth state from a live Supabase session (e.g. after reinstall,
-  // where AsyncStorage's persisted `isAuthed` flag would otherwise be gone).
+  // Local `isAuthed` (persisted via AsyncStorage) can drift from the real
+  // Supabase session — e.g. signing up while "Confirm email" is on leaves
+  // no active session until the confirmation link is clicked. Always trust
+  // the live session as truth, in both directions.
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setAuthed(true);
+      setAuthed(!!data.session);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) setAuthed(true);
+      setAuthed(!!session);
     });
     return () => sub.subscription.unsubscribe();
   }, []);

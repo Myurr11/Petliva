@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { ChevronRight } from "@/components/icons";
 import { ScreenTitle } from "@/components/ui/ScreenTitle";
@@ -7,11 +7,19 @@ import { TextField } from "@/components/ui/TextField";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { ProgressDots } from "@/components/ui/ProgressDots";
 import { useAppStore } from "@/store/useAppStore";
-import { colors } from "@/theme/tokens";
+import { colors, fonts } from "@/theme/tokens";
+import { supabase } from "@/lib/supabase";
 
 export default function ProfileStep() {
   const user = useAppStore((s) => s.user);
   const setUser = useAppStore((s) => s.setUser);
+  const resetAll = useAppStore((s) => s.resetAll);
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    resetAll();
+    router.replace("/(auth)/sign-in");
+  }
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -28,6 +36,9 @@ export default function ProfileStep() {
         onChangeText={(v) => setUser({ name: v })}
       />
       <TextField label="Phone (optional)" placeholder="+91 " keyboardType="phone-pad" />
+      <Pressable onPress={signOut} style={styles.signOut}>
+        <Text style={styles.signOutText}>Not you? Sign out</Text>
+      </Pressable>
       <View style={styles.spacer} />
       <PrimaryButton
         label="Continue"
@@ -42,5 +53,7 @@ export default function ProfileStep() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.surface },
   content: { paddingHorizontal: 24, paddingBottom: 32, flexGrow: 1 },
+  signOut: { alignSelf: "flex-start", marginTop: 4 },
+  signOutText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.inkSoft, textDecorationLine: "underline" },
   spacer: { flex: 1, minHeight: 12 },
 });

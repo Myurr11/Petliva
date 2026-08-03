@@ -3,7 +3,7 @@ import { View, Text, TextInput, StyleSheet, ScrollView, Alert } from "react-nati
 import { router } from "expo-router";
 import { ChevronRight, UtensilsCrossed } from "@/components/icons";
 import { ScreenTitle } from "@/components/ui/ScreenTitle";
-import { TextField } from "@/components/ui/TextField";
+import { FoodSearchField } from "@/components/ui/FoodSearchField";
 import { Chip } from "@/components/ui/Chip";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { ProgressDots } from "@/components/ui/ProgressDots";
@@ -26,7 +26,7 @@ export default function FoodPlanStep() {
     try {
       const petId = await createPetAndPlan(pet, plan);
       completeOnboarding(petId);
-      router.replace("/(app)/home");
+      router.replace("/(app)/(tabs)/home");
     } catch (e: any) {
       Alert.alert(
         "Couldn't save to your account",
@@ -45,12 +45,7 @@ export default function FoodPlanStep() {
         title={`Set ${pet.name || "their"} feeding plan`}
         sub="Check the feeding-guide label on the pack for the daily amount by weight."
       />
-      <TextField
-        label="Food name / label"
-        placeholder="e.g. Royal Canin Fit 32"
-        value={plan.foodName}
-        onChangeText={(v) => setPlan({ foodName: v })}
-      />
+      <FoodSearchField plan={plan} onChange={setPlan} />
       <Text style={styles.label}>Daily amount</Text>
       <View style={styles.amountCard}>
         <UtensilsCrossed size={18} color={colors.inkSoft} />
