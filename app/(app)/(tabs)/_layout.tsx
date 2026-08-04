@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Home, BarChart, Package } from "@/components/icons";
+import { Home, BarChart, Package, User } from "@/components/icons";
 import { colors, fonts } from "@/theme/tokens";
 
 export default function TabsLayout() {
@@ -24,6 +24,10 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="inventory"
         options={{ title: "Food", tabBarIcon: ({ color, size }) => <Package color={color} size={size} /> }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{ title: "Profile", tabBarIcon: ({ color, size }) => <User color={color} size={size} /> }}
       />
     </Tabs>
   );

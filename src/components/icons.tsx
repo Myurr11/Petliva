@@ -31,5 +31,8 @@ export const Flame = (p: IconProps) => <Feather name="zap" size={p.size ?? 20} c
 export const TrendingUp = (p: IconProps) => <Feather name="trending-up" size={p.size ?? 20} color={p.color ?? "#000"} />;
 export const AlertCircle = (p: IconProps) => <Feather name="alert-circle" size={p.size ?? 20} color={p.color ?? "#000"} />;
 export const ChevronDown = (p: IconProps) => <Feather name="chevron-down" size={p.size ?? 20} color={p.color ?? "#000"} />;
+export const User = (p: IconProps) => <Feather name="user" size={p.size ?? 20} color={p.color ?? "#000"} />;
+export const LogOut = (p: IconProps) => <Feather name="log-out" size={p.size ?? 20} color={p.color ?? "#000"} />;
+export const Edit3 = (p: IconProps) => <Feather name="edit-3" size={p.size ?? 20} color={p.color ?? "#000"} />;
 
 export type IconComponent = (p: IconProps) => React.ReactElement;

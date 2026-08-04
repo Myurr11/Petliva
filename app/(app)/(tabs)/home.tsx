@@ -19,13 +19,22 @@ export default function Home() {
   const petList = Object.values(pets);
   const active = activePetId ? pets[activePetId] : undefined;
 
+  function goAddPet() {
+    startAddPet();
+    router.push("/(onboarding)/pet-type");
+  }
+
   if (!active) {
     // Shouldn't normally happen post-onboarding, but guards against a stale
-    // activePetId (e.g. after a pet is somehow removed).
+    // or missing activePetId so this is never a dead end.
     return (
       <SafeAreaView style={styles.screen} edges={["top"]}>
-        <View style={styles.content}>
-          <Text style={styles.emptyText}>No pet selected yet.</Text>
+        <View style={styles.emptyStateWrap}>
+          <Text style={styles.emptyText}>No pet set up yet.</Text>
+          <Pressable style={styles.emptyStateBtn} onPress={goAddPet}>
+            <Plus size={16} color={colors.onInk} />
+            <Text style={styles.emptyStateBtnLabel}>Add your pet</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     );
@@ -36,11 +45,6 @@ export default function Home() {
   const pct = dailyGrams ? Math.min(100, Math.round((todayTotal / dailyGrams) * 100)) : 0;
   const remaining = Math.max(0, dailyGrams - todayTotal);
   const perMealSuggestion = plan.mealsPerDay ? Math.round(dailyGrams / plan.mealsPerDay) : 0;
-
-  function goAddPet() {
-    startAddPet();
-    router.push("/(onboarding)/pet-type");
-  }
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
@@ -188,6 +192,12 @@ function Stat({ value, label, color = colors.ink }: { value: string; label: stri
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.surface },
   content: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 8 },
+  emptyStateWrap: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, paddingHorizontal: 20 },
+  emptyStateBtn: {
+    flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: colors.ink,
+    paddingVertical: 12, paddingHorizontal: 20, borderRadius: 14,
+  },
+  emptyStateBtnLabel: { fontFamily: fonts.bodySemibold, color: colors.onInk, fontSize: 14 },
   switcherRow: { marginBottom: 14, maxHeight: 40 },
   switcherChip: {
     flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 8, paddingHorizontal: 14,

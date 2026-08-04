@@ -150,6 +150,36 @@ export const useAppStore = create<AppState>()(
     {
       name: "bowlkeeper-storage",
       storage: createJSONStorage(() => AsyncStorage),
+      version: 2,
+      migrate: (persisted: any, fromVersion) => {
+        // Versions before 2 stored a single pet directly on the root state
+        // (petId/pet/plan/logs) instead of the pets{} map. If that data is
+        // there, fold it into a PetRecord instead of losing it.
+        if (fromVersion < 2 && persisted) {
+          const hadPet = persisted.pet?.name;
+          const oldId = persisted.petId ?? (hadPet ? `legacy-${Date.now()}` : null);
+          if (hadPet && oldId) {
+            const record: PetRecord = {
+              id: oldId,
+              pet: persisted.pet,
+              plan: persisted.plan ?? emptyPlan,
+              logs: persisted.logs ?? [],
+              restocks: persisted.restocks ?? [],
+            };
+            return {
+              ...persisted,
+              pets: { [oldId]: record },
+              activePetId: oldId,
+              pet: emptyPet,
+              plan: emptyPlan,
+            };
+          }
+          // No recoverable pet data — fall back to a clean, un-onboarded
+          // state rather than a broken "hasOnboarded but no pet" limbo.
+          return { ...persisted, pets: {}, activePetId: null, hasOnboarded: false };
+        }
+        return persisted;
+      },
     }
   )
 );

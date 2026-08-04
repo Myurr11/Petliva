@@ -79,8 +79,9 @@ Email/password sign-up works out of the box with no extra config.
 - Finishing onboarding writes the pet + feeding plan to Supabase (`createPetAndPlan`)
 - Each feeding log is written to `feeding_logs` in Supabase *and* kept locally — if the network call fails, the local entry still counts toward today's ring so a bad connection never blocks logging
 - **Home** (bottom tab): pet switcher (appears once you have 2+ pets), bowl-fill ring, today's feeding log
-- **Insights** (bottom tab): 7-day streak counter, % of days all planned meals were logged, average grams/day, and a custom SVG bar chart (grams fed per day vs. daily target line) — built with `react-native-svg` directly rather than a charting library, since RN chart packages have been the single biggest source of the dependency conflicts we hit earlier in this build
+- **Insights** (bottom tab): 7-day streak counter, % of days all planned meals were logged, average grams/day, estimated protein fed today (when the food has macro data), and a custom SVG bar chart
 - **Food** (bottom tab): current stock remaining, estimated days left at the plan's daily rate, restock history, "Log a restock" modal with quick-select pack sizes (1/2/3/4/10/15kg)
+- **Profile** (bottom tab): your name/email, a list of every pet with tap-to-switch active pet, the active pet's vaccination checklist and medical history (captured at onboarding but not shown anywhere until now), "Add another pet," and sign out
 - **Multi-pet**: "Add pet" from the Home tab re-enters the onboarding wizard (skipping the profile step) to add a second pet; a horizontal pet switcher appears on Home once you have more than one. Each pet has its own plan, logs, and stock — all scoped by `pet_id` in Supabase, which the schema already supported from the start
 - **Food search (Open Pet Food Facts)**: the "Food name" field in onboarding now searches `world.openpetfoodfacts.org`'s free, open pet food database as you type (`src/lib/petFoodApi.ts`, `src/components/ui/FoodSearchField.tsx`). Picking a result pulls in the brand, product photo, ingredients list, and macro breakdown (protein/fat/fiber/ash %, kcal/100g) — all stored on the feeding plan and synced to Supabase. Typing something that doesn't match anything still works fine as free text; the search is additive, never required. That data then surfaces elsewhere instead of sitting unused:
   - **Home**: food card shows the product photo, brand, and macro badges; tapping it expands the full ingredients list
@@ -89,6 +90,7 @@ Email/password sign-up works out of the box with no extra config.
 - All state persists locally via Zustand + AsyncStorage as an offline cache, keyed by pet
 
 ## What's still stubbed / next steps
+- **Store migration note**: if you're updating from a version of this app before multi-pet support, `useAppStore.ts` now includes a `migrate()` function that runs automatically on first launch — it recovers your already-onboarded pet's data into the new `pets{}` map rather than losing it. This is a one-time, automatic fix; you shouldn't need to redo onboarding.
 - **Reading logs back from Supabase**: the app reads from the local Zustand cache only — it writes to Supabase but never reads history back. Fine on one device; if you want multi-device sync, add a `fetchPetsAndLogs()` call on app start that hydrates the store from Supabase instead of (or alongside) AsyncStorage.
 - **Notifications**: no reminder for missed meals yet — a good next feature, likely via `expo-notifications` scheduled off `plan.mealsPerDay`.
 - **Retry queue** for feeding logs / restocks that fail to sync while offline.
@@ -105,6 +107,7 @@ app/
   (app)/(tabs)/home.tsx    bowl-fill ring, today's log, pet switcher
   (app)/(tabs)/insights.tsx  streak, consistency %, SVG bar chart
   (app)/(tabs)/inventory.tsx  stock remaining, days-left estimate, restock history
+  (app)/(tabs)/profile.tsx  user info, pet switcher, health details, sign out
   (app)/log-meal.tsx       modal: log a feeding
   (app)/add-restock.tsx    modal: log a food restock
 src/
