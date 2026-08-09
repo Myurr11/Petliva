@@ -34,5 +34,10 @@ export const ChevronDown = (p: IconProps) => <Feather name="chevron-down" size={
 export const User = (p: IconProps) => <Feather name="user" size={p.size ?? 20} color={p.color ?? "#000"} />;
 export const LogOut = (p: IconProps) => <Feather name="log-out" size={p.size ?? 20} color={p.color ?? "#000"} />;
 export const Edit3 = (p: IconProps) => <Feather name="edit-3" size={p.size ?? 20} color={p.color ?? "#000"} />;
+export const Stethoscope = (p: IconProps) => <MaterialCommunityIcons name="stethoscope" size={p.size ?? 20} color={p.color ?? "#000"} />;
+export const Calendar = (p: IconProps) => <Feather name="calendar" size={p.size ?? 20} color={p.color ?? "#000"} />;
+export const CalendarPlus = (p: IconProps) => <MaterialCommunityIcons name="calendar-plus" size={p.size ?? 20} color={p.color ?? "#000"} />;
+export const Pill = (p: IconProps) => <MaterialCommunityIcons name="pill" size={p.size ?? 20} color={p.color ?? "#000"} />;
+export const HelpCircle = (p: IconProps) => <Feather name="help-circle" size={p.size ?? 20} color={p.color ?? "#000"} />;
 
 export type IconComponent = (p: IconProps) => React.ReactElement;

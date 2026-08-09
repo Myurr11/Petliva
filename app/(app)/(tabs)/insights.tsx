@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Rect, Line } from "react-native-svg";
 import { Flame, TrendingUp } from "@/components/icons";
+import { PetSwitcherHeader } from "@/components/ui/PetSwitcherHeader";
+import { NeoBox } from "@/components/ui/NeoBox";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
 import type { FeedingLog } from "@/types";
@@ -62,6 +64,7 @@ export default function Insights() {
     return (
       <SafeAreaView style={styles.screen} edges={["top"]}>
         <View style={styles.content}>
+          <PetSwitcherHeader />
           <Text style={styles.emptyText}>No pet selected yet.</Text>
         </View>
       </SafeAreaView>
@@ -70,35 +73,36 @@ export default function Insights() {
 
   const dailyGrams = Number(record.plan.dailyGrams) || 0;
   const chartMax = Math.max(dailyGrams, ...buckets.map((b) => b.grams), 1) * 1.15;
-  const chartW = 320, chartH = 140, barGap = 10;
+  const chartW = 300, chartH = 140, barGap = 10;
   const barW = (chartW - barGap * (DAYS_TO_SHOW - 1)) / DAYS_TO_SHOW;
   const targetY = chartH - (dailyGrams / chartMax) * chartH;
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content}>
+        <PetSwitcherHeader />
         <Text style={styles.title}>Insights</Text>
         <Text style={styles.sub}>{record.pet.name} · last {DAYS_TO_SHOW} days</Text>
 
         <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Flame size={20} color={colors.amberDeep} />
+          <NeoBox depth={3} radius={16} style={styles.statCard}>
+            <Flame size={20} color={colors.ink} />
             <Text style={styles.statValue}>{streak}</Text>
             <Text style={styles.statLabel}>day streak</Text>
-          </View>
-          <View style={styles.statCard}>
-            <TrendingUp size={20} color={colors.sage} />
+          </NeoBox>
+          <NeoBox depth={3} radius={16} style={styles.statCard}>
+            <TrendingUp size={20} color={colors.ink} />
             <Text style={styles.statValue}>{consistencyPct}%</Text>
             <Text style={styles.statLabel}>on-target days</Text>
-          </View>
-          <View style={styles.statCard}>
+          </NeoBox>
+          <NeoBox depth={3} radius={16} style={styles.statCard}>
             <Text style={[styles.statValue, { marginTop: 20 }]}>{avgGrams}g</Text>
             <Text style={styles.statLabel}>avg / day</Text>
-          </View>
+          </NeoBox>
         </View>
 
         {!!record.plan.proteinPct && (
-          <View style={styles.proteinCard}>
+          <NeoBox depth={3} radius={16} style={styles.proteinCard}>
             <Text style={styles.proteinValue}>{Math.round((todayTotal * record.plan.proteinPct) / 100)}g</Text>
             <View style={{ flex: 1 }}>
               <Text style={styles.proteinLabel}>estimated protein fed today</Text>
@@ -106,14 +110,14 @@ export default function Insights() {
                 Based on {record.plan.proteinPct}% protein in {record.plan.foodName} (from Open Pet Food Facts) × {todayTotal}g fed
               </Text>
             </View>
-          </View>
+          </NeoBox>
         )}
 
-        <View style={styles.chartCard}>
+        <NeoBox depth={4} radius={20} style={styles.chartCard}>
           <Text style={styles.chartLabel}>GRAMS FED PER DAY</Text>
           <Svg width={chartW} height={chartH + 24}>
             {dailyGrams > 0 && (
-              <Line x1={0} y1={targetY} x2={chartW} y2={targetY} stroke={colors.amberDeep} strokeWidth={1} strokeDasharray="4,4" />
+              <Line x1={0} y1={targetY} x2={chartW} y2={targetY} stroke={colors.accentDeep} strokeWidth={2} strokeDasharray="5,4" />
             )}
             {buckets.map((b, i) => {
               const h = chartMax ? (b.grams / chartMax) * chartH : 0;
@@ -126,23 +130,25 @@ export default function Insights() {
                   y={chartH - h}
                   width={barW}
                   height={h}
-                  rx={4}
-                  fill={hit ? colors.amber : colors.track}
+                  rx={3}
+                  fill={hit ? colors.accent : colors.track}
+                  stroke={colors.ink}
+                  strokeWidth={1.5}
                 />
               );
             })}
           </Svg>
-          <View style={styles.dayLabelsRow}>
+          <View style={[styles.dayLabelsRow, { width: chartW }]}>
             {buckets.map((b, i) => (
-              <Text key={i} style={styles.dayLabel}>
+              <Text key={i} style={[styles.dayLabel, { width: chartW / 7 }]}>
                 {b.date.toLocaleDateString([], { weekday: "narrow" })}
               </Text>
             ))}
           </View>
           {dailyGrams > 0 && (
-            <Text style={styles.chartFootnote}>Dashed line = daily target ({dailyGrams}g). Amber bars = all planned meals logged.</Text>
+            <Text style={styles.chartFootnote}>Dashed line = daily target ({dailyGrams}g). Mustard bars = all planned meals logged.</Text>
           )}
-        </View>
+        </NeoBox>
 
         <Text style={styles.sectionLabel}>DAY BY DAY</Text>
         <View style={{ gap: 10 }}>
@@ -162,30 +168,27 @@ export default function Insights() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.surface },
+  screen: { flex: 1, backgroundColor: colors.appBg },
   content: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 8 },
   title: { fontFamily: fonts.display, fontSize: 22, color: colors.ink, marginBottom: 2 },
   sub: { fontFamily: fonts.body, fontSize: 13, color: colors.inkSoft, marginBottom: 20 },
   statsRow: { flexDirection: "row", gap: 10, marginBottom: 20 },
-  statCard: { flex: 1, backgroundColor: colors.surfaceAlt, borderRadius: 16, paddingVertical: 16, alignItems: "center", gap: 4 },
+  statCard: { flex: 1, paddingVertical: 16, alignItems: "center", gap: 4 },
   statValue: { fontFamily: fonts.monoSemibold, fontSize: 20, color: colors.ink },
   statLabel: { fontFamily: fonts.body, fontSize: 10.5, color: colors.inkSoft, textAlign: "center" },
-  proteinCard: {
-    flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: colors.surfaceAlt,
-    borderRadius: 16, padding: 14, marginBottom: 20,
-  },
-  proteinValue: { fontFamily: fonts.monoSemibold, fontSize: 26, color: colors.amberDeep },
+  proteinCard: { flexDirection: "row", alignItems: "center", gap: 14, padding: 14, marginBottom: 20 },
+  proteinValue: { fontFamily: fonts.monoSemibold, fontSize: 26, color: colors.accentDeep },
   proteinLabel: { fontFamily: fonts.bodySemibold, fontSize: 12.5, color: colors.ink },
   proteinSub: { fontFamily: fonts.body, fontSize: 10.5, color: colors.inkSoft, marginTop: 2, lineHeight: 14 },
-  chartCard: { backgroundColor: colors.surfaceAlt, borderRadius: 20, padding: 18, marginBottom: 20, alignItems: "center" },
-  chartLabel: { alignSelf: "flex-start", fontFamily: fonts.mono, fontSize: 11, letterSpacing: 0.5, color: colors.inkSoft, marginBottom: 10 },
-  dayLabelsRow: { flexDirection: "row", justifyContent: "space-between", width: 320, marginTop: 4 },
-  dayLabel: { fontFamily: fonts.body, fontSize: 11, color: colors.inkSoft, width: 320 / 7, textAlign: "center" },
+  chartCard: { padding: 18, marginBottom: 20, alignItems: "center" },
+  chartLabel: { alignSelf: "flex-start", fontFamily: fonts.labelBold, fontSize: 11, letterSpacing: 0.5, color: colors.ink, marginBottom: 10 },
+  dayLabelsRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
+  dayLabel: { fontFamily: fonts.body, fontSize: 11, color: colors.inkSoft, textAlign: "center" },
   chartFootnote: { fontFamily: fonts.body, fontSize: 10.5, color: colors.inkSoft, marginTop: 10, textAlign: "center" },
-  sectionLabel: { fontFamily: fonts.mono, fontSize: 12.5, fontWeight: "600", color: colors.inkSoft, letterSpacing: 0.5, marginBottom: 10 },
+  sectionLabel: { fontFamily: fonts.labelBold, fontSize: 12.5, color: colors.ink, letterSpacing: 0.5, marginBottom: 10 },
   row: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingVertical: 12, paddingHorizontal: 16, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface,
+    paddingVertical: 12, paddingHorizontal: 16, borderRadius: 14, borderWidth: 2, borderColor: colors.ink, backgroundColor: colors.surface,
   },
   rowLabel: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.ink, flex: 1 },
   rowMeta: { fontFamily: fonts.body, fontSize: 12, color: colors.inkSoft, marginRight: 12 },

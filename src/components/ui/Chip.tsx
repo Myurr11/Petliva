@@ -10,17 +10,20 @@ interface Props {
   icon?: IconComponent;
 }
 
+// Pill chip, neo-brutalist: white with thick black border when unselected,
+// solid mustard fill (still black border) when selected — matches the
+// reference's "Dog/Cat/Other" and marital-status style selectors.
 export function Chip({ label, active, onPress, icon: Icon }: Props) {
   return (
     <Pressable
       onPress={onPress}
       style={[
         styles.base,
-        { borderColor: active ? colors.amber : colors.border, backgroundColor: active ? "#F5E6CE" : colors.surface },
+        { backgroundColor: active ? colors.accent : colors.surface },
       ]}
     >
-      {Icon ? <Icon size={14} color={active ? colors.amberDeep : colors.ink} /> : null}
-      <Text style={[styles.label, { color: active ? colors.amberDeep : colors.ink }]}>{label}</Text>
+      {Icon ? <Icon size={14} color={colors.ink} /> : null}
+      <Text style={styles.label}>{label}</Text>
     </Pressable>
   );
 }
@@ -30,10 +33,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 11,
+    paddingHorizontal: 18,
     borderRadius: radii.pill,
-    borderWidth: 1.5,
+    borderWidth: 2,
+    borderColor: colors.ink,
   },
-  label: { fontFamily: fonts.bodyMedium, fontSize: 13.5 },
+  label: { fontFamily: fonts.labelBold, fontSize: 14, color: colors.ink },
 });

@@ -5,6 +5,8 @@ import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 import { PawPrint, Mail } from "@/components/icons";
 import { TextField } from "@/components/ui/TextField";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import { NeoBox } from "@/components/ui/NeoBox";
 import { colors, fonts } from "@/theme/tokens";
 import { useAppStore } from "@/store/useAppStore";
 import { supabase } from "@/lib/supabase";
@@ -33,8 +35,6 @@ export default function SignIn() {
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         if (!data.session) {
-          // "Confirm email" is on in the Supabase project — the account
-          // exists but there's no active session until the link is clicked.
           Alert.alert(
             "Check your email",
             "We sent a confirmation link to " + email + ". Click it, then come back and log in here."
@@ -82,9 +82,9 @@ export default function SignIn() {
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={styles.container}>
         <View style={styles.hero}>
-          <View style={styles.logoBox}>
-            <PawPrint color={colors.onInk} size={32} />
-          </View>
+          <NeoBox depth={4} radius={20} style={styles.logoBox}>
+            <PawPrint color={colors.ink} size={32} />
+          </NeoBox>
           <Text style={styles.appName}>Bowlkeeper</Text>
           <Text style={styles.tagline}>Feed on schedule. Track every gram.</Text>
         </View>
@@ -105,19 +105,21 @@ export default function SignIn() {
             value={password}
             onChangeText={setPassword}
           />
-          <Pressable style={styles.amberBtn} onPress={handleEmailContinue} disabled={loading}>
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <>
-                <Mail size={17} color="#fff" />
-                <Text style={styles.amberBtnLabel}>{mode === "signUp" ? "Create account" : "Log in"}</Text>
-              </>
-            )}
+          <PrimaryButton
+            label={mode === "signUp" ? "Create account" : "Log in"}
+            icon={loading ? undefined : Mail}
+            onPress={handleEmailContinue}
+            disabled={loading}
+            style={{ marginBottom: 14 }}
+          />
+          {loading && <ActivityIndicator color={colors.ink} style={{ marginBottom: 14 }} />}
+
+          <Pressable onPress={handleGoogle} disabled={loading}>
+            <NeoBox depth={4} radius={999} style={styles.googleBox}>
+              <Text style={styles.googleBtnLabel}>Continue with Google</Text>
+            </NeoBox>
           </Pressable>
-          <Pressable style={styles.googleBtn} onPress={handleGoogle} disabled={loading}>
-            <Text style={styles.googleBtnLabel}>Continue with Google</Text>
-          </Pressable>
+
           <Pressable onPress={() => setMode(mode === "signUp" ? "signIn" : "signUp")} style={styles.switchModeBtn}>
             <Text style={styles.switchModeText}>
               {mode === "signUp" ? "Already have an account? Log in" : "New here? Create an account"}
@@ -131,28 +133,20 @@ export default function SignIn() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.surface },
+  flex: { flex: 1, backgroundColor: colors.appBg },
   container: { flex: 1, paddingHorizontal: 24, justifyContent: "center" },
   hero: { alignItems: "center", marginBottom: 44 },
   logoBox: {
-    width: 68, height: 68, borderRadius: 20, backgroundColor: colors.ink,
-    alignItems: "center", justifyContent: "center", marginBottom: 18,
+    width: 68, height: 68, alignItems: "center", justifyContent: "center", backgroundColor: colors.accent, marginBottom: 18,
   },
   appName: { fontFamily: fonts.display, fontSize: 28, color: colors.ink },
   tagline: { fontFamily: fonts.body, fontSize: 14, color: colors.inkSoft, marginTop: 8 },
   form: { width: "100%" },
-  amberBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: colors.amber, paddingVertical: 14, borderRadius: 14, marginBottom: 12, minHeight: 48,
+  googleBox: {
+    width: "100%", paddingVertical: 16, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface,
   },
-  amberBtnLabel: { fontFamily: fonts.bodySemibold, color: "#fff", fontSize: 15 },
-  googleBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border,
-    paddingVertical: 14, borderRadius: 14,
-  },
-  googleBtnLabel: { fontFamily: fonts.bodySemibold, color: colors.ink, fontSize: 15 },
-  switchModeBtn: { marginTop: 16, alignItems: "center" },
-  switchModeText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.amberDeep },
+  googleBtnLabel: { fontFamily: fonts.labelBold, fontSize: 16, color: colors.ink },
+  switchModeBtn: { marginTop: 18, alignItems: "center" },
+  switchModeText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.accentDeep },
   terms: { textAlign: "center", fontSize: 11.5, color: colors.inkSoft, marginTop: 20 },
 });

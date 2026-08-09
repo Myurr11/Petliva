@@ -3,10 +3,13 @@ import { colors } from "@/theme/tokens";
 
 export default function AppLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.surface } }}>
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.appBg } }}>
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="profile" options={{ animation: "slide_from_right" }} />
       <Stack.Screen name="log-meal" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
       <Stack.Screen name="add-restock" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
+      <Stack.Screen name="add-appointment" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
+      <Stack.Screen name="add-medication" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
     </Stack>
   );
 }

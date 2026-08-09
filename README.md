@@ -8,11 +8,15 @@ wired to a real Supabase backend.
 - Expo SDK 54, pinned to the exact versions its own compatibility check reports as expected: `react@19.1.0`, `react-dom@19.1.0`, `react-native@0.81.5`, `babel-preset-expo@~54.0.10`. If you ever see Metro print a "should be updated for best compatibility" list on startup, **trust that list over any version number in this README** — it's read directly from your installed `expo` package, which is the actual source of truth and updates more often than this file can.
 
 > Icons are `@expo/vector-icons` (`MaterialCommunityIcons` + `Feather`, wrapped
-> in `src/components/icons.tsx` under the same names used throughout the app —
-> `PawPrint`, `Cat`, `Dog`, etc.), not `lucide-react-native`. Lucide's React
+> in `src/components/icons.tsx` under consistent names — `PawPrint`, `Cat`,
+> `Dog`, `Stethoscope`, etc.), not `lucide-react-native`. Lucide's React
 > Native package still pins a `react@^18` peer dependency, which breaks `npm i`
 > on React 19 projects. `@expo/vector-icons` ships inside `expo` itself, so it's
 > always version-matched to your SDK with no separate install step.
+>
+> Fonts are Plus Jakarta Sans (headlines) + Be Vietnam Pro (body/labels) +
+> IBM Plex Mono (gram/data readouts), loaded via `@expo-google-fonts/*` in
+> `app/_layout.tsx`.
 
 ## Setup
 
@@ -59,13 +63,11 @@ just don't commit your **service role** key anywhere in this app.
 
 ### One-time Supabase setup
 Run `supabase/schema.sql` in your project's SQL editor (Dashboard → SQL Editor).
-It creates `pets`, `feeding_plans` (now with Open Pet Food Facts columns —
-brand, image, ingredients, macros), `feeding_logs`, `food_stock`, and RLS
-policies scoped to `auth.uid()`. If you already ran an earlier version of this
-schema against your project, the file has commented-out `alter table ... add
-column if not exists ...` lines near the `feeding_plans` definition — uncomment
-and run just those to pick up the new nutrition columns without touching your
-existing data.
+It creates `pets` (now with `vet_visit_frequency`), `feeding_plans` (with Open
+Pet Food Facts columns), `feeding_logs`, `food_stock`, `vet_appointments`,
+`medications`, and RLS policies scoped to `auth.uid()`. The whole file is
+idempotent — safe to re-run any time, including after a partial run that hit
+an error, without touching existing data.
 
 For **Google sign-in** to work you also need, in the Supabase Dashboard:
 1. Authentication → Providers → enable Google, with your OAuth client ID/secret
@@ -73,28 +75,33 @@ For **Google sign-in** to work you also need, in the Supabase Dashboard:
 
 Email/password sign-up works out of the box with no extra config.
 
+## Design system
+Full app reskin, neo-brutalist: warm cream background (`#FCF9F8`), thick 2px black borders on every card/button/input, hard offset shadows with no blur (built via `NeoBox` — real RN shadow props render as a soft Android `elevation` blur, not the crisp offset rectangle this style needs, so it's faked correctly with stacked Views instead), solid mustard (`#FFC107`) for selected/primary states, Plus Jakarta Sans headlines + Be Vietnam Pro body text. Every screen — onboarding, auth, all four tabs, all four modals — uses the same system. All tokens live in `src/theme/tokens.ts`; the shared components (`Chip`, `PrimaryButton`, `TextField`, `ScreenTitle`, `ProgressDots`, `Ring`, `NeoBox`, `NeoOnboardHeader`, `PetSwitcherHeader`) are what make the look cascade everywhere without per-screen one-offs.
+
+## Navigation
+- **Home / Insights / Vet / Food** — bottom tabs. Each one starts with a shared `PetSwitcherHeader` (pet chips + profile icon), so every tab is always scoped to whichever pet is selected and account access is never more than one tap away.
+- **Profile** — moved out of the tab bar to a top-right header icon (tap it from any tab). Pushed as a regular screen with a back button, not a tab, since it's account-level rather than per-pet.
+
 ## What's wired up
-- Full onboarding: auth → profile → pet type → breed → weight → vaccinations → medical history (optional) → feeding plan
+- Full onboarding, now 8 steps: auth → profile → pet type → breed → weight → vaccinations → medical history → **vet care** (new) → feeding plan
 - **Real Supabase auth**: email/password sign-up & login, Google OAuth via `expo-web-browser` + PKCE exchange, session restored automatically on relaunch (and cleared automatically if the local "authed" flag ever drifts from the real session)
-- Finishing onboarding writes the pet + feeding plan to Supabase (`createPetAndPlan`)
+- Finishing onboarding writes the pet, feeding plan, and any vet care captured to Supabase
 - Each feeding log is written to `feeding_logs` in Supabase *and* kept locally — if the network call fails, the local entry still counts toward today's ring so a bad connection never blocks logging
-- **Home** (bottom tab): pet switcher (appears once you have 2+ pets), bowl-fill ring, today's feeding log
-- **Insights** (bottom tab): 7-day streak counter, % of days all planned meals were logged, average grams/day, estimated protein fed today (when the food has macro data), and a custom SVG bar chart
-- **Food** (bottom tab): current stock remaining, estimated days left at the plan's daily rate, restock history, "Log a restock" modal with quick-select pack sizes (1/2/3/4/10/15kg)
-- **Profile** (bottom tab): your name/email, a list of every pet with tap-to-switch active pet, the active pet's vaccination checklist and medical history (captured at onboarding but not shown anywhere until now), "Add another pet," and sign out
-- **Multi-pet**: "Add pet" from the Home tab re-enters the onboarding wizard (skipping the profile step) to add a second pet; a horizontal pet switcher appears on Home once you have more than one. Each pet has its own plan, logs, and stock — all scoped by `pet_id` in Supabase, which the schema already supported from the start
-- **Food search (Open Pet Food Facts)**: the "Food name" field in onboarding now searches `world.openpetfoodfacts.org`'s free, open pet food database as you type (`src/lib/petFoodApi.ts`, `src/components/ui/FoodSearchField.tsx`). Picking a result pulls in the brand, product photo, ingredients list, and macro breakdown (protein/fat/fiber/ash %, kcal/100g) — all stored on the feeding plan and synced to Supabase. Typing something that doesn't match anything still works fine as free text; the search is additive, never required. That data then surfaces elsewhere instead of sitting unused:
-  - **Home**: food card shows the product photo, brand, and macro badges; tapping it expands the full ingredients list
-  - **Insights**: an "estimated protein fed today" card computed from grams logged × the food's protein %
-  - Coverage is crowd-sourced and uneven — well-represented global brands (Whiskas, Royal Canin's more common lines) show up reliably, but don't expect every SKU (e.g. we couldn't confirm Royal Canin Fit 32 specifically) to be there
+- **Home**: bowl-fill ring, today's feeding log, food card with image/brand/macros from Open Pet Food Facts
+- **Insights**: 7-day streak counter, % of days all planned meals were logged, average grams/day, estimated protein fed today, and a custom SVG bar chart
+- **Vet** (new): visit frequency (editable chips), upcoming/past appointments with an "Add appointment" modal, medications list with an "Add medication" modal, and the vaccination checklist captured at onboarding
+- **Food**: current stock remaining, estimated days left, restock history, "Log a restock" modal
+- **Profile**: your name/email, every pet with tap-to-switch, the active pet's vaccination/medical summary with a link to the full Vet tab, "Add another pet," and sign out
+- **Food search (Open Pet Food Facts)**: search-as-you-type in the feeding-plan step, pulling in brand/photo/ingredients/macros; surfaced on Home (food card) and Insights (protein-today card)
+- **Multi-pet**: each pet has its own plan, logs, stock, and vet info — all scoped by `pet_id` in Supabase
 - All state persists locally via Zustand + AsyncStorage as an offline cache, keyed by pet
 
 ## What's still stubbed / next steps
-- **Store migration note**: if you're updating from a version of this app before multi-pet support, `useAppStore.ts` now includes a `migrate()` function that runs automatically on first launch — it recovers your already-onboarded pet's data into the new `pets{}` map rather than losing it. This is a one-time, automatic fix; you shouldn't need to redo onboarding.
-- **Reading logs back from Supabase**: the app reads from the local Zustand cache only — it writes to Supabase but never reads history back. Fine on one device; if you want multi-device sync, add a `fetchPetsAndLogs()` call on app start that hydrates the store from Supabase instead of (or alongside) AsyncStorage.
-- **Notifications**: no reminder for missed meals yet — a good next feature, likely via `expo-notifications` scheduled off `plan.mealsPerDay`.
-- **Retry queue** for feeding logs / restocks that fail to sync while offline.
-- **Insights** currently only looks at the last 7 days and computes averages from local data; extending the chart's date range would need to pull more history from Supabase per the point above.
+- **Store migration note**: `useAppStore.ts` is now on persisted-state version 3. Two migrations run automatically and in order on first launch after updating — v1→v2 recovers pre-multi-pet data into the `pets{}` map, and v2→v3 backfills an empty `vet{}` object onto any pet record that predates the Vet feature. Both are one-time and automatic; you shouldn't need to redo onboarding.
+- **Reading logs/appointments/medications back from Supabase**: the app reads from the local Zustand cache only — it writes to Supabase but never reads history back. Fine on one device; multi-device sync would need a `fetchPetsAndLogs()` call on app start.
+- **Notifications**: no reminder for missed meals, upcoming vet appointments, or medication schedules yet — a natural next feature via `expo-notifications`, now that the underlying data (appointments, medication schedules) exists to schedule off of.
+- **Editing/deleting** appointments and medications isn't built yet — you can add, but not yet edit or remove, an entry.
+- **Retry queue** for anything that fails to sync while offline.
 
 ## Folder structure
 ```

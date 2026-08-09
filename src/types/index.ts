@@ -10,6 +10,7 @@ export interface Pet {
   type: PetType | "";
   breed: string;
   weightKg: string;
+  ageYears: string;
   vaccinations: Record<string, boolean>;
   medicalTags: string[];
   medicalNotes: string;
@@ -64,6 +65,27 @@ export interface StockEntry {
   addedAt: string;
 }
 
+export interface VetAppointment {
+  id: string;
+  /** ISO date */
+  date: string;
+  note: string;
+  completed: boolean;
+}
+
+export interface Medication {
+  id: string;
+  name: string;
+  dosage: string;
+  schedule: string;
+}
+
+export interface VetInfo {
+  visitFrequency: string;
+  appointments: VetAppointment[];
+  medications: Medication[];
+}
+
 /** Everything the app tracks for one committed (post-onboarding) pet. */
 export interface PetRecord {
   id: string;
@@ -71,4 +93,5 @@ export interface PetRecord {
   plan: FeedingPlan;
   logs: FeedingLog[];
   restocks: StockEntry[];
+  vet: VetInfo;
 }

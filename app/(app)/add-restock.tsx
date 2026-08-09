@@ -59,7 +59,7 @@ export default function AddRestock() {
         onChangeText={setGrams}
         placeholder="e.g. 3000"
         keyboardType="number-pad"
-        placeholderTextColor={colors.inkSoft}
+        placeholderTextColor={colors.outlineVariant}
         style={styles.input}
       />
 
@@ -68,7 +68,7 @@ export default function AddRestock() {
         value={note}
         onChangeText={setNote}
         placeholder="e.g. Royal Canin Fit 32, 2 bags"
-        placeholderTextColor={colors.inkSoft}
+        placeholderTextColor={colors.outlineVariant}
         style={styles.input}
       />
 
@@ -79,14 +79,14 @@ export default function AddRestock() {
 }
 
 const styles = StyleSheet.create({
-  sheet: { flex: 1, backgroundColor: colors.surface, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 28 },
+  sheet: { flex: 1, backgroundColor: colors.appBg, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 28 },
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 18 },
   title: { fontFamily: fonts.display, fontSize: 19, color: colors.ink },
-  closeBtn: { backgroundColor: colors.surfaceAlt, borderRadius: 10, padding: 6 },
-  label: { fontFamily: fonts.bodySemibold, fontSize: 12.5, color: colors.inkSoft, marginBottom: 8, marginTop: 4 },
+  closeBtn: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 2, borderColor: colors.ink, padding: 6 },
+  label: { fontFamily: fonts.labelBold, fontSize: 14, color: colors.ink, marginBottom: 8, marginTop: 4 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 18 },
   input: {
-    borderWidth: 1.5, borderColor: colors.border, borderRadius: 12, backgroundColor: colors.surfaceAlt,
-    paddingVertical: 13, paddingHorizontal: 14, fontFamily: fonts.body, fontSize: 15, color: colors.ink, marginBottom: 16,
+    borderWidth: 2, borderColor: colors.ink, borderRadius: 8, backgroundColor: colors.surface,
+    paddingVertical: 14, paddingHorizontal: 16, fontFamily: fonts.body, fontSize: 16, color: colors.ink, marginBottom: 16,
   },
 });

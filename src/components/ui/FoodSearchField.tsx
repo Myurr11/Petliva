@@ -129,7 +129,7 @@ export function FoodSearchField({ plan, onChange }: Props) {
               ? error
               : "Searches a free, open pet food database — pick a match or just keep typing."}
           </Text>
-          {loading && <ActivityIndicator size="small" color={colors.amberDeep} style={{ marginTop: 6 }} />}
+          {loading && <ActivityIndicator size="small" color={colors.accentDeep} style={{ marginTop: 6 }} />}
           {results.length > 0 && (
             <View style={styles.results}>
               {results.map((p) => (
@@ -156,33 +156,33 @@ export function FoodSearchField({ plan, onChange }: Props) {
 }
 
 const styles = StyleSheet.create({
-  label: { fontFamily: fonts.bodySemibold, fontSize: 12.5, color: colors.inkSoft, marginBottom: 6 },
+  label: { fontFamily: fonts.labelBold, fontSize: 14, color: colors.ink, marginBottom: 8 },
   input: {
-    width: "100%", paddingVertical: 13, paddingHorizontal: 14, borderRadius: radii.md,
-    borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surface, fontFamily: fonts.body,
-    fontSize: 15, color: colors.ink,
+    width: "100%", paddingVertical: 14, paddingHorizontal: 16, borderRadius: radii.sm,
+    borderWidth: 2, borderColor: colors.ink, backgroundColor: colors.surface, fontFamily: fonts.body,
+    fontSize: 16, color: colors.ink,
   },
   hint: { fontFamily: fonts.body, fontSize: 11, color: colors.inkSoft, marginTop: 6 },
   results: {
-    marginTop: 8, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border,
+    marginTop: 10, borderRadius: radii.md, borderWidth: 2, borderColor: colors.ink,
     backgroundColor: colors.surface, overflow: "hidden",
   },
   resultRow: {
     flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10, paddingHorizontal: 12,
-    borderBottomWidth: 1, borderBottomColor: colors.border,
+    borderBottomWidth: 1.5, borderBottomColor: colors.ink,
   },
   resultName: { fontFamily: fonts.bodyMedium, fontSize: 13.5, color: colors.ink },
   resultMeta: { fontFamily: fonts.body, fontSize: 11.5, color: colors.inkSoft, marginTop: 1 },
   thumbSm: { width: 34, height: 34, borderRadius: 8, backgroundColor: colors.surfaceAlt },
   thumb: { width: 44, height: 44, borderRadius: 10, backgroundColor: colors.surfaceAlt },
-  thumbFallback: { borderWidth: 1, borderColor: colors.border },
+  thumbFallback: { borderWidth: 2, borderColor: colors.ink },
   selectedCard: {
-    flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: colors.surfaceAlt,
-    borderRadius: radii.md, borderWidth: 1.5, borderColor: colors.sage, padding: 12,
+    flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: colors.sageBg,
+    borderRadius: radii.md, borderWidth: 2, borderColor: colors.ink, padding: 12,
   },
   selectedName: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.ink },
   selectedBrand: { fontFamily: fonts.body, fontSize: 12, color: colors.inkSoft, marginTop: 1 },
-  selectedMacros: { fontFamily: fonts.mono, fontSize: 10.5, color: colors.amberDeep, marginTop: 3 },
-  matchBadge: { width: 22, height: 22, borderRadius: 999, backgroundColor: "#EAF0E9", alignItems: "center", justifyContent: "center" },
+  selectedMacros: { fontFamily: fonts.mono, fontSize: 10.5, color: colors.accentDeep, marginTop: 3 },
+  matchBadge: { width: 22, height: 22, borderRadius: 999, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.ink, alignItems: "center", justifyContent: "center" },
   clearBtn: { padding: 4 },
 });

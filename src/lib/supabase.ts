@@ -1,7 +1,7 @@
 import "react-native-url-polyfill/auto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
-import type { Pet, FeedingPlan, FeedingLog, StockEntry } from "@/types";
+import type { Pet, FeedingPlan, FeedingLog, StockEntry, VetInfo, VetAppointment, Medication } from "@/types";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL as string;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY as string;
@@ -24,7 +24,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // See supabase/schema.sql for the table definitions + RLS policies these
 // helpers assume (pets, feeding_plans, feeding_logs).
 
-export async function createPetAndPlan(pet: Pet, plan: FeedingPlan) {
+export async function createPetAndPlan(pet: Pet, plan: FeedingPlan, vet: VetInfo) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -38,9 +38,11 @@ export async function createPetAndPlan(pet: Pet, plan: FeedingPlan) {
       type: pet.type,
       breed: pet.breed,
       weight_kg: pet.weightKg ? Number(pet.weightKg) : null,
+      age_years: pet.ageYears ? Number(pet.ageYears) : null,
       vaccinations: pet.vaccinations,
       medical_tags: pet.medicalTags,
       medical_notes: pet.medicalNotes,
+      vet_visit_frequency: vet.visitFrequency || null,
     })
     .select()
     .single();
@@ -63,6 +65,13 @@ export async function createPetAndPlan(pet: Pet, plan: FeedingPlan) {
   });
   if (planErr) throw planErr;
 
+  for (const appt of vet.appointments) {
+    await insertAppointment(petRow.id, appt).catch(() => {});
+  }
+  for (const med of vet.medications) {
+    await insertMedication(petRow.id, med).catch(() => {});
+  }
+
   return petRow.id as string;
 }
 
@@ -83,5 +92,30 @@ export async function insertRestock(petId: string, entry: StockEntry) {
     note: entry.note,
     added_at: entry.addedAt,
   });
+  if (error) throw error;
+}
+
+export async function insertAppointment(petId: string, appt: VetAppointment) {
+  const { error } = await supabase.from("vet_appointments").insert({
+    pet_id: petId,
+    date: appt.date,
+    note: appt.note,
+    completed: appt.completed,
+  });
+  if (error) throw error;
+}
+
+export async function insertMedication(petId: string, med: Medication) {
+  const { error } = await supabase.from("medications").insert({
+    pet_id: petId,
+    name: med.name,
+    dosage: med.dosage,
+    schedule: med.schedule,
+  });
+  if (error) throw error;
+}
+
+export async function updateVetFrequency(petId: string, frequency: string) {
+  const { error } = await supabase.from("pets").update({ vet_visit_frequency: frequency }).eq("id", petId);
   if (error) throw error;
 }

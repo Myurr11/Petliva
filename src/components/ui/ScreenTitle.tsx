@@ -13,15 +13,15 @@ export function ScreenTitle({ eyebrow, title, sub }: { eyebrow?: string; title: 
 }
 
 const styles = StyleSheet.create({
-  wrap: { marginTop: 28, marginBottom: 24 },
+  wrap: { alignItems: "center", marginTop: 16, marginBottom: 28 },
   eyebrow: {
     fontFamily: fonts.mono,
     fontSize: 11,
     letterSpacing: 1.2,
-    color: colors.amberDeep,
+    color: colors.accentDeep,
     textTransform: "uppercase",
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  title: { fontFamily: fonts.display, fontSize: 26, color: colors.ink, lineHeight: 32 },
-  sub: { fontFamily: fonts.body, color: colors.inkSoft, fontSize: 14, marginTop: 8, lineHeight: 20 },
+  title: { fontFamily: fonts.headlineLg, fontSize: 26, color: colors.ink, textAlign: "center", lineHeight: 32 },
+  sub: { fontFamily: fonts.body, color: colors.inkSoft, fontSize: 14.5, marginTop: 10, lineHeight: 21, textAlign: "center" },
 });

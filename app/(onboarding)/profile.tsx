@@ -5,7 +5,7 @@ import { ChevronRight } from "@/components/icons";
 import { ScreenTitle } from "@/components/ui/ScreenTitle";
 import { TextField } from "@/components/ui/TextField";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
-import { ProgressDots } from "@/components/ui/ProgressDots";
+import { NeoOnboardHeader } from "@/components/ui/NeoOnboardHeader";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
 import { supabase } from "@/lib/supabase";
@@ -22,36 +22,34 @@ export default function ProfileStep() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <ProgressDots step={1} total={7} />
-      <ScreenTitle
-        eyebrow="Step 1 of 7"
-        title="Tell us about you"
-        sub="This helps us personalize reminders and vet-visit notes."
-      />
-      <TextField
-        label="Your name"
-        placeholder="Mayur Joshi"
-        value={user.name}
-        onChangeText={(v) => setUser({ name: v })}
-      />
-      <TextField label="Phone (optional)" placeholder="+91 " keyboardType="phone-pad" />
-      <Pressable onPress={signOut} style={styles.signOut}>
-        <Text style={styles.signOutText}>Not you? Sign out</Text>
-      </Pressable>
-      <View style={styles.spacer} />
-      <PrimaryButton
-        label="Continue"
-        icon={ChevronRight}
-        disabled={!user.name}
-        onPress={() => router.push("/(onboarding)/pet-type")}
-      />
-    </ScrollView>
+    <View style={styles.screen}>
+      <NeoOnboardHeader step={1} total={8} />
+      <ScrollView contentContainerStyle={styles.content}>
+        <ScreenTitle title="Tell us about you" sub="This helps us personalize reminders and vet-visit notes." />
+        <TextField
+          label="Your name"
+          placeholder="Mayur Joshi"
+          value={user.name}
+          onChangeText={(v) => setUser({ name: v })}
+        />
+        <TextField label="Phone (optional)" placeholder="+91 " keyboardType="phone-pad" />
+        <Pressable onPress={signOut} style={styles.signOut}>
+          <Text style={styles.signOutText}>Not you? Sign out</Text>
+        </Pressable>
+        <View style={styles.spacer} />
+        <PrimaryButton
+          label="Continue"
+          icon={ChevronRight}
+          disabled={!user.name}
+          onPress={() => router.push("/(onboarding)/pet-type")}
+        />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.surface },
+  screen: { flex: 1, backgroundColor: colors.appBg },
   content: { paddingHorizontal: 24, paddingBottom: 32, flexGrow: 1 },
   signOut: { alignSelf: "flex-start", marginTop: 4 },
   signOutText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.inkSoft, textDecorationLine: "underline" },

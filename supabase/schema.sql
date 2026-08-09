@@ -10,9 +10,32 @@ create table if not exists pets (
   type text not null check (type in ('cat','dog')),
   breed text,
   weight_kg numeric,
+  age_years numeric,
   vaccinations jsonb default '{}',
   medical_tags text[] default '{}',
   medical_notes text,
+  vet_visit_frequency text,
+  created_at timestamptz default now()
+);
+
+alter table pets add column if not exists vet_visit_frequency text;
+alter table pets add column if not exists age_years numeric;
+
+create table if not exists vet_appointments (
+  id uuid primary key default gen_random_uuid(),
+  pet_id uuid references pets on delete cascade not null,
+  date date not null,
+  note text,
+  completed boolean default false,
+  created_at timestamptz default now()
+);
+
+create table if not exists medications (
+  id uuid primary key default gen_random_uuid(),
+  pet_id uuid references pets on delete cascade not null,
+  name text not null,
+  dosage text,
+  schedule text,
   created_at timestamptz default now()
 );
 
@@ -57,6 +80,8 @@ alter table pets enable row level security;
 alter table feeding_plans enable row level security;
 alter table feeding_logs enable row level security;
 alter table food_stock enable row level security;
+alter table vet_appointments enable row level security;
+alter table medications enable row level security;
 
 drop policy if exists "Users manage their own pets" on pets;
 create policy "Users manage their own pets"
@@ -81,3 +106,15 @@ create policy "Users manage food stock for their own pets"
   on food_stock for all
   using (exists (select 1 from pets where pets.id = food_stock.pet_id and pets.user_id = auth.uid()))
   with check (exists (select 1 from pets where pets.id = food_stock.pet_id and pets.user_id = auth.uid()));
+
+drop policy if exists "Users manage vet appointments for their own pets" on vet_appointments;
+create policy "Users manage vet appointments for their own pets"
+  on vet_appointments for all
+  using (exists (select 1 from pets where pets.id = vet_appointments.pet_id and pets.user_id = auth.uid()))
+  with check (exists (select 1 from pets where pets.id = vet_appointments.pet_id and pets.user_id = auth.uid()));
+
+drop policy if exists "Users manage medications for their own pets" on medications;
+create policy "Users manage medications for their own pets"
+  on medications for all
+  using (exists (select 1 from pets where pets.id = medications.pet_id and pets.user_id = auth.uid()))
+  with check (exists (select 1 from pets where pets.id = medications.pet_id and pets.user_id = auth.uid()));

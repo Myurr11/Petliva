@@ -6,7 +6,7 @@ import { ScreenTitle } from "@/components/ui/ScreenTitle";
 import { FoodSearchField } from "@/components/ui/FoodSearchField";
 import { Chip } from "@/components/ui/Chip";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
-import { ProgressDots } from "@/components/ui/ProgressDots";
+import { NeoOnboardHeader } from "@/components/ui/NeoOnboardHeader";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
 import { createPetAndPlan } from "@/lib/supabase";
@@ -14,6 +14,7 @@ import { createPetAndPlan } from "@/lib/supabase";
 export default function FoodPlanStep() {
   const pet = useAppStore((s) => s.pet);
   const plan = useAppStore((s) => s.plan);
+  const vetDraft = useAppStore((s) => s.vetDraft);
   const setPlan = useAppStore((s) => s.setPlan);
   const completeOnboarding = useAppStore((s) => s.completeOnboarding);
   const [saving, setSaving] = useState(false);
@@ -24,7 +25,7 @@ export default function FoodPlanStep() {
   async function finish() {
     setSaving(true);
     try {
-      const petId = await createPetAndPlan(pet, plan);
+      const petId = await createPetAndPlan(pet, plan, vetDraft);
       completeOnboarding(petId);
       router.replace("/(app)/(tabs)/home");
     } catch (e: any) {
@@ -38,60 +39,59 @@ export default function FoodPlanStep() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <ProgressDots step={7} total={7} />
-      <ScreenTitle
-        eyebrow="Step 7 of 7"
-        title={`Set ${pet.name || "their"} feeding plan`}
-        sub="Check the feeding-guide label on the pack for the daily amount by weight."
-      />
-      <FoodSearchField plan={plan} onChange={setPlan} />
-      <Text style={styles.label}>Daily amount</Text>
-      <View style={styles.amountCard}>
-        <UtensilsCrossed size={18} color={colors.inkSoft} />
-        <TextInput
-          value={plan.dailyGrams}
-          onChangeText={(v) => setPlan({ dailyGrams: v })}
-          placeholder="63"
-          keyboardType="number-pad"
-          placeholderTextColor={colors.inkSoft}
-          style={styles.amountInput}
+    <View style={styles.screen}>
+      <NeoOnboardHeader step={8} total={8} />
+      <ScrollView contentContainerStyle={styles.content}>
+        <ScreenTitle
+          title={`Set ${pet.name || "their"} feeding plan`}
+          sub="Check the feeding-guide label on the pack for the daily amount by weight."
         />
-        <Text style={styles.amountUnit}>g / day</Text>
-      </View>
+        <FoodSearchField plan={plan} onChange={setPlan} />
+        <Text style={styles.label}>Daily amount</Text>
+        <View style={styles.amountCard}>
+          <UtensilsCrossed size={18} color={colors.ink} />
+          <TextInput
+            value={plan.dailyGrams}
+            onChangeText={(v) => setPlan({ dailyGrams: v })}
+            placeholder="63"
+            keyboardType="number-pad"
+            placeholderTextColor={colors.outlineVariant}
+            style={styles.amountInput}
+          />
+          <Text style={styles.amountUnit}>g / day</Text>
+        </View>
 
-      <Text style={styles.label}>Split across how many meals?</Text>
-      <View style={styles.mealsRow}>
-        {[2, 3, 4].map((n) => (
-          <Chip key={n} label={`${n} meals`} active={plan.mealsPerDay === n} onPress={() => setPlan({ mealsPerDay: n })} />
-        ))}
-      </View>
-      {perMeal ? (
-        <Text style={styles.hint}>≈ {perMeal}g per meal, {plan.mealsPerDay}×/day</Text>
-      ) : null}
+        <Text style={styles.label}>Split across how many meals?</Text>
+        <View style={styles.mealsRow}>
+          {[2, 3, 4].map((n) => (
+            <Chip key={n} label={`${n} meals`} active={plan.mealsPerDay === n} onPress={() => setPlan({ mealsPerDay: n })} />
+          ))}
+        </View>
+        {perMeal ? <Text style={styles.hint}>≈ {perMeal}g per meal, {plan.mealsPerDay}×/day</Text> : null}
 
-      <View style={styles.spacer} />
-      <PrimaryButton
-        label={saving ? "Saving…" : "Finish setup"}
-        icon={ChevronRight}
-        disabled={!plan.dailyGrams || !plan.foodName || saving}
-        onPress={finish}
-      />
-    </ScrollView>
+        <View style={styles.spacer} />
+        <PrimaryButton
+          label={saving ? "Saving…" : "Finish setup"}
+          icon={ChevronRight}
+          disabled={!plan.dailyGrams || !plan.foodName || saving}
+          onPress={finish}
+        />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.surface },
-  content: { paddingHorizontal: 24, paddingBottom: 32, flexGrow: 1 },
-  label: { fontFamily: fonts.bodySemibold, fontSize: 12.5, color: colors.inkSoft, marginBottom: 8 },
+  screen: { flex: 1, backgroundColor: colors.appBg },
+  content: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32, flexGrow: 1 },
+  label: { fontFamily: fonts.labelBold, fontSize: 14, color: colors.ink, marginBottom: 8 },
   amountCard: {
-    flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: colors.surfaceAlt,
-    borderRadius: 14, paddingVertical: 12, paddingHorizontal: 16, marginBottom: 18,
+    flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: colors.surface,
+    borderRadius: 12, borderWidth: 2, borderColor: colors.ink, paddingVertical: 12, paddingHorizontal: 16, marginBottom: 18,
   },
   amountInput: { width: 70, fontFamily: fonts.mono, fontSize: 22, color: colors.ink },
   amountUnit: { fontFamily: fonts.mono, fontSize: 14, color: colors.inkSoft },
   mealsRow: { flexDirection: "row", gap: 10, marginBottom: 8 },
-  hint: { fontFamily: fonts.mono, fontSize: 12.5, color: colors.amberDeep, marginBottom: 20 },
+  hint: { fontFamily: fonts.mono, fontSize: 12.5, color: colors.accentDeep, marginBottom: 20 },
   spacer: { flex: 1, minHeight: 16 },
 });

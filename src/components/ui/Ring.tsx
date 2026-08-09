@@ -14,14 +14,16 @@ export function Ring({ pct, size = 180 }: { pct: number; size?: number }) {
         cy="90"
         r={r}
         fill="none"
-        stroke={colors.amber}
+        stroke={colors.accent}
         strokeWidth="14"
-        strokeLinecap="round"
+        strokeLinecap="butt"
         strokeDasharray={`${c} ${c}`}
         strokeDashoffset={c - (clamped / 100) * c}
         rotation="-90"
         origin="90, 90"
       />
+      <Circle cx="90" cy="90" r={r + 7} fill="none" stroke={colors.ink} strokeWidth="2" />
+      <Circle cx="90" cy="90" r={r - 7} fill="none" stroke={colors.ink} strokeWidth="2" />
     </Svg>
   );
 }

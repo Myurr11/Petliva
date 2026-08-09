@@ -1,7 +1,10 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { UserProfile, Pet, FeedingPlan, FeedingLog, StockEntry, PetRecord } from "@/types";
+import type {
+  UserProfile, Pet, FeedingPlan, FeedingLog, StockEntry, PetRecord,
+  VetInfo, VetAppointment, Medication,
+} from "@/types";
 
 interface AppState {
   isAuthed: boolean;
@@ -12,6 +15,7 @@ interface AppState {
   // second (or third...) pet later, via startAddPet().
   pet: Pet;
   plan: FeedingPlan;
+  vetDraft: VetInfo;
 
   pets: Record<string, PetRecord>;
   activePetId: string | null;
@@ -20,16 +24,20 @@ interface AppState {
   setUser: (u: Partial<UserProfile>) => void;
   setPet: (p: Partial<Pet>) => void;
   setPlan: (p: Partial<FeedingPlan>) => void;
+  setVetDraft: (v: Partial<VetInfo>) => void;
 
   /** Called at the end of onboarding: commits the current draft as a new pet. */
   completeOnboarding: (petId: string) => void;
-  /** Resets the draft and clears activePetId's "just onboarded" state so the
-   *  wizard can be re-entered (starting at pet-type) to add another pet. */
+  /** Resets the draft so the wizard can be re-entered (starting at pet-type)
+   *  to add another pet. */
   startAddPet: () => void;
   setActivePet: (id: string) => void;
 
   addLog: (petId: string, grams: number, label: string) => FeedingLog;
   addRestock: (petId: string, grams: number, note: string) => StockEntry;
+  addAppointment: (petId: string, date: string, note: string) => VetAppointment;
+  addMedication: (petId: string, name: string, dosage: string, schedule: string) => Medication;
+  setVetFrequency: (petId: string, frequency: string) => void;
 
   todayLogs: (petId?: string) => FeedingLog[];
   todayTotal: (petId?: string) => number;
@@ -46,12 +54,14 @@ const emptyPet: Pet = {
   type: "",
   breed: "",
   weightKg: "",
+  ageYears: "",
   vaccinations: {},
   medicalTags: [],
   medicalNotes: "",
 };
 
 const emptyPlan: FeedingPlan = { foodName: "", dailyGrams: "", mealsPerDay: 3 };
+const emptyVet: VetInfo = { visitFrequency: "", appointments: [], medications: [] };
 
 function isSameDay(a: Date, b: Date) {
   return a.toDateString() === b.toDateString();
@@ -65,6 +75,7 @@ export const useAppStore = create<AppState>()(
       user: { name: "", email: "" },
       pet: emptyPet,
       plan: emptyPlan,
+      vetDraft: emptyVet,
       pets: {},
       activePetId: null,
 
@@ -72,20 +83,22 @@ export const useAppStore = create<AppState>()(
       setUser: (u) => set({ user: { ...get().user, ...u } }),
       setPet: (p) => set({ pet: { ...get().pet, ...p } }),
       setPlan: (p) => set({ plan: { ...get().plan, ...p } }),
+      setVetDraft: (v) => set({ vetDraft: { ...get().vetDraft, ...v } }),
 
       completeOnboarding: (petId) => {
-        const { pet, plan, pets } = get();
-        const record: PetRecord = { id: petId, pet, plan, logs: [], restocks: [] };
+        const { pet, plan, vetDraft, pets } = get();
+        const record: PetRecord = { id: petId, pet, plan, logs: [], restocks: [], vet: vetDraft };
         set({
           hasOnboarded: true,
           activePetId: petId,
           pets: { ...pets, [petId]: record },
           pet: emptyPet,
           plan: emptyPlan,
+          vetDraft: emptyVet,
         });
       },
 
-      startAddPet: () => set({ pet: emptyPet, plan: emptyPlan }),
+      startAddPet: () => set({ pet: emptyPet, plan: emptyPlan, vetDraft: emptyVet }),
       setActivePet: (id) => set({ activePetId: id }),
 
       addLog: (petId, grams, label) => {
@@ -106,6 +119,40 @@ export const useAppStore = create<AppState>()(
           pets: { ...get().pets, [petId]: { ...record, restocks: [entry, ...record.restocks] } },
         });
         return entry;
+      },
+
+      addAppointment: (petId, date, note) => {
+        const entry: VetAppointment = { id: String(Date.now()), date, note, completed: false };
+        const record = get().pets[petId];
+        if (!record) return entry;
+        set({
+          pets: {
+            ...get().pets,
+            [petId]: { ...record, vet: { ...record.vet, appointments: [entry, ...record.vet.appointments] } },
+          },
+        });
+        return entry;
+      },
+
+      addMedication: (petId, name, dosage, schedule) => {
+        const entry: Medication = { id: String(Date.now()), name, dosage, schedule };
+        const record = get().pets[petId];
+        if (!record) return entry;
+        set({
+          pets: {
+            ...get().pets,
+            [petId]: { ...record, vet: { ...record.vet, medications: [entry, ...record.vet.medications] } },
+          },
+        });
+        return entry;
+      },
+
+      setVetFrequency: (petId, frequency) => {
+        const record = get().pets[petId];
+        if (!record) return;
+        set({
+          pets: { ...get().pets, [petId]: { ...record, vet: { ...record.vet, visitFrequency: frequency } } },
+        });
       },
 
       todayLogs: (petId) => {
@@ -143,6 +190,7 @@ export const useAppStore = create<AppState>()(
           user: { name: "", email: "" },
           pet: emptyPet,
           plan: emptyPlan,
+          vetDraft: emptyVet,
           pets: {},
           activePetId: null,
         }),
@@ -150,35 +198,40 @@ export const useAppStore = create<AppState>()(
     {
       name: "bowlkeeper-storage",
       storage: createJSONStorage(() => AsyncStorage),
-      version: 2,
+      version: 3,
       migrate: (persisted: any, fromVersion) => {
-        // Versions before 2 stored a single pet directly on the root state
-        // (petId/pet/plan/logs) instead of the pets{} map. If that data is
-        // there, fold it into a PetRecord instead of losing it.
-        if (fromVersion < 2 && persisted) {
-          const hadPet = persisted.pet?.name;
-          const oldId = persisted.petId ?? (hadPet ? `legacy-${Date.now()}` : null);
+        let state = persisted;
+
+        // v0/v1 -> v2: single pet fields on root state -> pets{} map
+        if (fromVersion < 2 && state) {
+          const hadPet = state.pet?.name;
+          const oldId = state.petId ?? (hadPet ? `legacy-${Date.now()}` : null);
           if (hadPet && oldId) {
             const record: PetRecord = {
               id: oldId,
-              pet: persisted.pet,
-              plan: persisted.plan ?? emptyPlan,
-              logs: persisted.logs ?? [],
-              restocks: persisted.restocks ?? [],
+              pet: state.pet,
+              plan: state.plan ?? emptyPlan,
+              logs: state.logs ?? [],
+              restocks: state.restocks ?? [],
+              vet: emptyVet,
             };
-            return {
-              ...persisted,
-              pets: { [oldId]: record },
-              activePetId: oldId,
-              pet: emptyPet,
-              plan: emptyPlan,
-            };
+            state = { ...state, pets: { [oldId]: record }, activePetId: oldId, pet: emptyPet, plan: emptyPlan };
+          } else {
+            state = { ...state, pets: {}, activePetId: null, hasOnboarded: false };
           }
-          // No recoverable pet data — fall back to a clean, un-onboarded
-          // state rather than a broken "hasOnboarded but no pet" limbo.
-          return { ...persisted, pets: {}, activePetId: null, hasOnboarded: false };
         }
-        return persisted;
+
+        // v2 -> v3: PetRecord gained a `vet` field; backfill it on every
+        // existing pet, and add the vetDraft scratch field.
+        if (fromVersion < 3 && state) {
+          const pets = { ...(state.pets ?? {}) };
+          for (const id of Object.keys(pets)) {
+            if (!pets[id].vet) pets[id] = { ...pets[id], vet: emptyVet };
+          }
+          state = { ...state, pets, vetDraft: state.vetDraft ?? emptyVet };
+        }
+
+        return state;
       },
     }
   )
