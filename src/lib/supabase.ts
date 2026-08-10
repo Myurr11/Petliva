@@ -120,6 +120,10 @@ export async function insertAppointment(petId: string, appt: VetAppointment) {
   const { error } = await supabase.from("vet_appointments").insert({
     pet_id: petId,
     date: appt.date,
+    time: appt.time ?? null,
+    hospital_name: appt.hospitalName ?? null,
+    doctor_name: appt.doctorName ?? null,
+    phone_no: appt.phoneNo ?? null,
     note: appt.note,
     completed: appt.completed,
   });

@@ -78,9 +78,20 @@ Email/password sign-up works out of the box with no extra config.
 ## Design system
 Full app reskin, neo-brutalist: warm cream background (`#FCF9F8`), thick 2px black borders on every card/button/input, hard offset shadows with no blur (built via `NeoBox` — real RN shadow props render as a soft Android `elevation` blur, not the crisp offset rectangle this style needs, so it's faked correctly with stacked Views instead), solid mustard (`#FFC107`) for selected/primary states, Plus Jakarta Sans headlines + Be Vietnam Pro body text. Every screen — onboarding, auth, all four tabs, all four modals — uses the same system. All tokens live in `src/theme/tokens.ts`; the shared components (`Chip`, `PrimaryButton`, `TextField`, `ScreenTitle`, `ProgressDots`, `Ring`, `NeoBox`, `NeoOnboardHeader`, `PetSwitcherHeader`) are what make the look cascade everywhere without per-screen one-offs.
 
+## Calendar / date selection
+- **Date fields everywhere** (onboarding vet-care, add-appointment) now open a real calendar picker (`DateField` → `CalendarGrid`, month-grid navigation, no external date-picker dependency) instead of a free-text "YYYY-MM-DD" input.
+- **Insights**: redesigned around a calendar. A horizontal `WeekStrip` (like most calendar/fitness apps) lets you browse any day — days with a vet appointment get a small dot marker. Below it, a detail panel for whichever day is selected: that day's vet appointment (if any, with a quick "add one" prompt if not), every feeding logged that day (food category, time, grams), and the day's total. The old flat "day by day" list is gone, superseded by this.
+- **Home**: a new reminders card between the log button and food cards shows the next 1–2 upcoming vet appointments and the active pet's medication list (name + schedule) as a daily reminder, tapping through to the Vet tab for details.
+
 ## Navigation
 - **Home / Insights / Vet / Food** — bottom tabs, now a **floating pill-shaped bar** (rounded, inset from the screen edges, soft lifted shadow) rather than a full-width rectangle. Each tab starts with the shared `PetSwitcherHeader` (pet chips + profile icon).
 - **Profile** — a top-right header icon on every tab, not in the tab bar at all (pushed as a regular screen with a back button).
+
+## Calendar & date selection
+- **`DateField`** (`src/components/ui/DateField.tsx`) — the one reusable date-selection UI for the whole app. A tappable field that opens a modal month-grid calendar (`CalendarGrid.tsx`, built from plain Views/Pressables, no native date-picker dependency). Replaces the old free-text "YYYY-MM-DD" inputs in the vet-care onboarding step and the add-appointment modal.
+- **`WeekStrip`** (`src/components/ui/WeekStrip.tsx`) — a horizontal 7-day week selector with prev/next navigation and dots marking days with a vet appointment, used at the top of the Insights tab.
+- **Insights tab redesign**: below the existing streak/consistency/chart stats, a week-strip calendar lets you browse any day. Selecting a day shows that day's feeding log (all foods, with times and grams) and, if there was one, a highlighted vet-appointment card for that date — or a quick "Add a vet appointment for this day" prompt if there wasn't one, pre-filled with the date you tapped.
+- **Home tab**: a reminder card surfaces the next couple of upcoming vet appointments and any active medications, tappable through to the Vet tab for full detail.
 
 ## Multi-food (dry + wet)
 A pet can now have several foods instead of exactly one — typically one dry + one wet, optionally more:

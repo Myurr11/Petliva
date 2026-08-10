@@ -5,6 +5,7 @@ import { ChevronRight, Stethoscope, Calendar, Pill } from "@/components/icons";
 import { ScreenTitle } from "@/components/ui/ScreenTitle";
 import { Chip } from "@/components/ui/Chip";
 import { TextField } from "@/components/ui/TextField";
+import { DateField } from "@/components/ui/DateField";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { NeoOnboardHeader } from "@/components/ui/NeoOnboardHeader";
 import { useAppStore } from "@/store/useAppStore";
@@ -57,7 +58,7 @@ export default function VetCareStep() {
           <Calendar size={15} color={colors.ink} />
           <Text style={styles.label}>Upcoming appointment? (optional)</Text>
         </View>
-        <TextField label="Date" placeholder="e.g. 2026-09-15" value={nextDate} onChangeText={setNextDate} />
+        <DateField label="Date" value={nextDate} onChange={setNextDate} placeholder="Pick a date (optional)" />
         <TextField label="Note" placeholder="e.g. Annual checkup + booster" value={nextNote} onChangeText={setNextNote} />
 
         <View style={[styles.rowLabel, { marginTop: 4 }]}>

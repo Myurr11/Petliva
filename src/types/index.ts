@@ -77,6 +77,10 @@ export interface VetAppointment {
   id: string;
   /** ISO date */
   date: string;
+  time?: string;
+  hospitalName?: string;
+  doctorName?: string;
+  phoneNo?: string;
   note: string;
   completed: boolean;
 }

@@ -54,6 +54,10 @@ export default function TabsLayout() {
         name="inventory"
         options={{ title: "Food", tabBarIcon: ({ color, size }) => <Package color={color} size={size} /> }}
       />
+      <Tabs.Screen
+        name="profile"
+        options={{ href: null }}
+      />
     </Tabs>
   );
 }

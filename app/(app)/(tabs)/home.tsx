@@ -2,13 +2,20 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, Image } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Plus, UtensilsCrossed, Clock3 } from "@/components/icons";
+import { Plus, UtensilsCrossed, Clock3, Calendar, Pill } from "@/components/icons";
 import { Ring } from "@/components/ui/Ring";
 import { NeoBox } from "@/components/ui/NeoBox";
 import { PetSwitcherHeader } from "@/components/ui/PetSwitcherHeader";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
 import type { FoodItem } from "@/types";
+
+function isUpcoming(dateStr: string) {
+  const d = new Date(dateStr);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return d >= today;
+}
 
 export default function Home() {
   const pets = useAppStore((s) => s.pets);
@@ -55,6 +62,12 @@ export default function Home() {
     return f ? f.foodName : "Food";
   }
 
+  const upcomingAppointments = active.vet.appointments
+    .filter((a) => !a.completed && isUpcoming(a.date))
+    .sort((a, b) => +new Date(a.date) - +new Date(b.date))
+    .slice(0, 2);
+  const medications = active.vet.medications;
+
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -97,6 +110,88 @@ export default function Home() {
             <Text style={styles.logBtnLabel}>Log a feeding</Text>
           </NeoBox>
         </Pressable>
+
+        {/* UPCOMING APPOINTMENTS SECTION */}
+        <Text style={styles.sectionLabel}>UPCOMING APPOINTMENTS</Text>
+        {upcomingAppointments.length === 0 ? (
+          <Pressable onPress={() => router.push("/(app)/add-appointment")} style={{ marginBottom: 20 }}>
+            <View style={styles.emptyCardRow}>
+              <View style={styles.emptyCardIconWrap}>
+                <Calendar size={16} color={colors.ink} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.emptyCardTitle}>No upcoming appointments</Text>
+                <Text style={styles.emptyCardSub}>Tap to schedule next vet visit for {pet.name}</Text>
+              </View>
+              <Plus size={14} color={colors.accentDeep} />
+            </View>
+          </Pressable>
+        ) : (
+          <View style={{ gap: 10, marginBottom: 20 }}>
+            {upcomingAppointments.map((a) => (
+              <Pressable key={a.id} onPress={() => router.push("/(app)/(tabs)/vet")}>
+                <NeoBox depth={3} radius={14} style={{ backgroundColor: colors.accent }}>
+                  <View style={styles.apptRowInner}>
+                    <View style={styles.apptIconWrap}>
+                      <Calendar size={16} color={colors.ink} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.apptDate}>
+                        {new Date(a.date).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}
+                        {a.time ? ` at ${a.time}` : ""}
+                      </Text>
+                      {(a.doctorName || a.hospitalName) && (
+                        <Text style={styles.apptVetMeta}>
+                          {[a.doctorName, a.hospitalName].filter(Boolean).join(" · ")}
+                        </Text>
+                      )}
+                      {!!a.phoneNo && <Text style={styles.apptPhone}>📞 {a.phoneNo}</Text>}
+                      {!!a.note && <Text style={styles.apptNote}>{a.note}</Text>}
+                    </View>
+                    <View style={styles.upcomingBadge}>
+                      <Text style={styles.upcomingBadgeText}>Upcoming</Text>
+                    </View>
+                  </View>
+                </NeoBox>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        {/* MEDICATION REMINDERS SECTION */}
+        <Text style={styles.sectionLabel}>MEDICATION REMINDERS</Text>
+        {medications.length === 0 ? (
+          <Pressable onPress={() => router.push("/(app)/add-medication")} style={{ marginBottom: 20 }}>
+            <View style={styles.emptyCardRow}>
+              <View style={styles.emptyCardIconWrap}>
+                <Pill size={16} color={colors.ink} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.emptyCardTitle}>No medication reminders set</Text>
+                <Text style={styles.emptyCardSub}>Tap to add medication schedule</Text>
+              </View>
+              <Plus size={14} color={colors.accentDeep} />
+            </View>
+          </Pressable>
+        ) : (
+          <View style={{ gap: 10, marginBottom: 20 }}>
+            {medications.map((m) => (
+              <Pressable key={m.id} onPress={() => router.push("/(app)/(tabs)/vet")}>
+                <View style={styles.medRow}>
+                  <View style={styles.medIconWrap}>
+                    <Pill size={14} color={colors.ink} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.medName}>{m.name}</Text>
+                    {!!(m.dosage || m.schedule) && (
+                      <Text style={styles.medDetail}>{[m.dosage, m.schedule].filter(Boolean).join(" · ")}</Text>
+                    )}
+                  </View>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        )}
 
         {foods.map((food) => (
           <FoodCard key={food.id} food={food} open={openFoodId === food.id} onToggle={() => setOpenFoodId(openFoodId === food.id ? null : food.id)} />
@@ -216,6 +311,35 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent, paddingVertical: 16, marginBottom: 22,
   },
   logBtnLabel: { fontFamily: fonts.labelBold, color: colors.onAccent, fontSize: 15 },
+
+  apptRowInner: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 14 },
+  apptIconWrap: { width: 34, height: 34, borderRadius: 10, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.ink, alignItems: "center", justifyContent: "center" },
+  apptDate: { fontFamily: fonts.bodySemibold, fontSize: 13.5, color: colors.ink },
+  apptVetMeta: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: colors.ink, marginTop: 2 },
+  apptPhone: { fontFamily: fonts.mono, fontSize: 11, color: colors.accentDeep, marginTop: 1 },
+  apptNote: { fontFamily: fonts.body, fontSize: 11.5, color: colors.ink, marginTop: 2, opacity: 0.85 },
+  upcomingBadge: { backgroundColor: colors.ink, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10 },
+  upcomingBadgeText: { fontFamily: fonts.bodySemibold, fontSize: 10.5, color: colors.onInk },
+
+  medRow: {
+    flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: 14,
+    borderWidth: 2, borderColor: colors.ink, backgroundColor: colors.surface,
+  },
+  medIconWrap: { width: 30, height: 30, borderRadius: 10, backgroundColor: colors.surfaceAlt, borderWidth: 1.5, borderColor: colors.ink, alignItems: "center", justifyContent: "center" },
+  medName: { fontFamily: fonts.bodySemibold, fontSize: 13.5, color: colors.ink },
+  medDetail: { fontFamily: fonts.body, fontSize: 11.5, color: colors.inkSoft, marginTop: 1 },
+
+  emptyCardRow: {
+    flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, paddingHorizontal: 14,
+    borderRadius: 14, borderWidth: 2, borderColor: colors.ink, borderStyle: "dashed", backgroundColor: colors.surface,
+  },
+  emptyCardIconWrap: {
+    width: 32, height: 32, borderRadius: 10, backgroundColor: colors.surfaceAlt, borderWidth: 1.5, borderColor: colors.ink,
+    alignItems: "center", justifyContent: "center",
+  },
+  emptyCardTitle: { fontFamily: fonts.bodySemibold, fontSize: 12.5, color: colors.ink },
+  emptyCardSub: { fontFamily: fonts.body, fontSize: 11, color: colors.inkSoft, marginTop: 1 },
+
   foodCard: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, marginBottom: 14 },
   foodImage: { width: 48, height: 48, borderRadius: 10, backgroundColor: colors.surfaceAlt },
   foodImageFallback: { alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: colors.ink },

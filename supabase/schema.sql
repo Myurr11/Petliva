@@ -25,10 +25,19 @@ create table if not exists vet_appointments (
   id uuid primary key default gen_random_uuid(),
   pet_id uuid references pets on delete cascade not null,
   date date not null,
+  time text,
+  hospital_name text,
+  doctor_name text,
+  phone_no text,
   note text,
   completed boolean default false,
   created_at timestamptz default now()
 );
+
+alter table vet_appointments add column if not exists time text;
+alter table vet_appointments add column if not exists hospital_name text;
+alter table vet_appointments add column if not exists doctor_name text;
+alter table vet_appointments add column if not exists phone_no text;
 
 create table if not exists medications (
   id uuid primary key default gen_random_uuid(),

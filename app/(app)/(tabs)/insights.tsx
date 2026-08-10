@@ -1,10 +1,14 @@
-import React, { useMemo } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import React, { useMemo, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { Rect, Line } from "react-native-svg";
-import { Flame, TrendingUp } from "@/components/icons";
+import Svg, { Rect, Line, Text as SvgText } from "react-native-svg";
+import { UtensilsCrossed, Calendar, Plus, Clock3, Pill } from "@/components/icons";
 import { PetSwitcherHeader } from "@/components/ui/PetSwitcherHeader";
 import { NeoBox } from "@/components/ui/NeoBox";
+import { Ring } from "@/components/ui/Ring";
+import { WeekStrip } from "@/components/ui/WeekStrip";
+import { toISODate, isSameDate } from "@/components/ui/CalendarGrid";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
 import type { FeedingLog } from "@/types";
@@ -36,27 +40,13 @@ function buildDailyBreakdown(logs: FeedingLog[], days: number) {
   return buckets;
 }
 
-function computeStreak(buckets: { grams: number; meals: number }[], mealsPerDay: number) {
-  let streak = 0;
-  for (let i = buckets.length - 1; i >= 0; i--) {
-    if (buckets[i].meals >= mealsPerDay && mealsPerDay > 0) streak++;
-    else break;
-  }
-  return streak;
-}
-
 export default function Insights() {
   const record = useAppStore((s) => (s.activePetId ? s.pets[s.activePetId] : undefined));
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
-  const { buckets, streak, consistencyPct, avgGrams } = useMemo(() => {
-    if (!record) return { buckets: [], streak: 0, consistencyPct: 0, avgGrams: 0 };
-    const b = buildDailyBreakdown(record.logs, DAYS_TO_SHOW);
-    const mealsPerDay = record.foods.reduce((sum, f) => sum + f.mealsPerDay, 0);
-    const s = computeStreak(b, mealsPerDay);
-    const daysHit = b.filter((d) => mealsPerDay > 0 && d.meals >= mealsPerDay).length;
-    const pct = Math.round((daysHit / DAYS_TO_SHOW) * 100);
-    const avg = b.length ? Math.round(b.reduce((sum, d) => sum + d.grams, 0) / b.length) : 0;
-    return { buckets: b, streak: s, consistencyPct: pct, avgGrams: avg };
+  const buckets = useMemo(() => {
+    if (!record) return [];
+    return buildDailyBreakdown(record.logs, DAYS_TO_SHOW);
   }, [record]);
 
   if (!record) {
@@ -72,106 +62,317 @@ export default function Insights() {
 
   const dailyGrams = record.foods.reduce((sum, f) => sum + (Number(f.dailyGrams) || 0), 0);
   const totalMealsPerDay = record.foods.reduce((sum, f) => sum + f.mealsPerDay, 0);
-  const chartMax = Math.max(dailyGrams, ...buckets.map((b) => b.grams), 1) * 1.15;
-  const chartW = 300, chartH = 140, barGap = 10;
-  const barW = (chartW - barGap * (DAYS_TO_SHOW - 1)) / DAYS_TO_SHOW;
-  const targetY = chartH - (dailyGrams / chartMax) * chartH;
 
-  const today = new Date();
-  const proteinToday = record.foods.reduce((sum, f) => {
-    if (!f.proteinPct) return sum;
-    const grams = record.logs
-      .filter((l) => l.foodId === f.id && new Date(l.loggedAt).toDateString() === today.toDateString())
-      .reduce((s, l) => s + l.grams, 0);
-    return sum + (grams * f.proteinPct) / 100;
-  }, 0);
-  const hasProteinData = record.foods.some((f) => f.proteinPct);
+  // Graph Layout Math
+  const chartW = 310;
+  const chartH = 130;
+  const topPadding = 28;
+  const barGap = 10;
+  const barW = (chartW - barGap * (DAYS_TO_SHOW - 1)) / DAYS_TO_SHOW;
+  const maxLogged = Math.max(...buckets.map((b) => b.grams), 1);
+  const chartMax = Math.max(dailyGrams, maxLogged) * 1.25;
+  const targetY = topPadding + chartH - (dailyGrams / chartMax) * chartH;
+
+  const appointmentDates = record.vet.appointments.map((a) => a.date);
+  const selectedIso = toISODate(selectedDate);
+  const dayLogs = record.logs
+    .filter((l) => isSameDate(new Date(l.loggedAt), selectedDate))
+    .sort((a, b) => +new Date(a.loggedAt) - +new Date(b.loggedAt));
+  const dayTotal = dayLogs.reduce((sum, l) => sum + l.grams, 0);
+  const dayAppointment = record.vet.appointments.find((a) => a.date === selectedIso);
+
+  const ringPct = dailyGrams ? Math.min(100, Math.round((dayTotal / dailyGrams) * 100)) : 0;
+  const remainingGrams = Math.max(0, dailyGrams - dayTotal);
+
+  function foodFor(foodId: string) {
+    return record!.foods.find((f) => f.id === foodId);
+  }
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content}>
         <PetSwitcherHeader />
         <Text style={styles.title}>Insights</Text>
-        <Text style={styles.sub}>{record.pet.name} · last {DAYS_TO_SHOW} days</Text>
+        <Text style={styles.sub}>{record.pet.name} · last {DAYS_TO_SHOW} days overview</Text>
 
-        <View style={styles.statsRow}>
-          <NeoBox depth={3} radius={16} style={styles.statCard}>
-            <Flame size={20} color={colors.ink} />
-            <Text style={styles.statValue}>{streak}</Text>
-            <Text style={styles.statLabel}>day streak</Text>
-          </NeoBox>
-          <NeoBox depth={3} radius={16} style={styles.statCard}>
-            <TrendingUp size={20} color={colors.ink} />
-            <Text style={styles.statValue}>{consistencyPct}%</Text>
-            <Text style={styles.statLabel}>on-target days</Text>
-          </NeoBox>
-          <NeoBox depth={3} radius={16} style={styles.statCard}>
-            <Text style={[styles.statValue, { marginTop: 20 }]}>{avgGrams}g</Text>
-            <Text style={styles.statLabel}>avg / day</Text>
-          </NeoBox>
-        </View>
-
-        {hasProteinData && (
-          <NeoBox depth={3} radius={16} style={styles.proteinCard}>
-            <Text style={styles.proteinValue}>{Math.round(proteinToday)}g</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.proteinLabel}>estimated protein fed today</Text>
-              <Text style={styles.proteinSub}>
-                Summed across each food's protein % (from Open Pet Food Facts) × grams fed today
-              </Text>
-            </View>
-          </NeoBox>
-        )}
-
+        {/* FEEDING HISTORY GRAPH */}
         <NeoBox depth={4} radius={20} style={styles.chartCard}>
-          <Text style={styles.chartLabel}>GRAMS FED PER DAY</Text>
-          <Svg width={chartW} height={chartH + 24}>
+          <View style={styles.chartHeader}>
+            <Text style={styles.chartLabel}>GRAMS FED PER DAY</Text>
             {dailyGrams > 0 && (
-              <Line x1={0} y1={targetY} x2={chartW} y2={targetY} stroke={colors.accentDeep} strokeWidth={2} strokeDasharray="5,4" />
+              <View style={styles.targetBadge}>
+                <Text style={styles.targetBadgeText}>Target: {dailyGrams}g/day</Text>
+              </View>
             )}
+          </View>
+
+          <Svg width={chartW} height={chartH + topPadding + 6}>
+            {/* Grid Baseline */}
+            <Line
+              x1={0}
+              y1={topPadding + chartH}
+              x2={chartW}
+              y2={topPadding + chartH}
+              stroke={colors.ink}
+              strokeWidth={1.5}
+            />
+
+            {/* Target Line */}
+            {dailyGrams > 0 && (
+              <Line
+                x1={0}
+                y1={targetY}
+                x2={chartW}
+                y2={targetY}
+                stroke={colors.accentDeep}
+                strokeWidth={2}
+                strokeDasharray="6,4"
+              />
+            )}
+
+            {/* Bars */}
             {buckets.map((b, i) => {
               const h = chartMax ? (b.grams / chartMax) * chartH : 0;
               const x = i * (barW + barGap);
-              const hit = totalMealsPerDay > 0 && b.meals >= totalMealsPerDay;
+              const barCenter = x + barW / 2;
+              const y = topPadding + chartH - h;
+              const isSelected = isSameDate(b.date, selectedDate);
+              const hasData = b.grams > 0;
+
               return (
-                <Rect
-                  key={i}
-                  x={x}
-                  y={chartH - h}
-                  width={barW}
-                  height={h}
-                  rx={3}
-                  fill={hit ? colors.accent : colors.track}
-                  stroke={colors.ink}
-                  strokeWidth={1.5}
-                />
+                <React.Fragment key={i}>
+                  {hasData ? (
+                    <Rect
+                      x={x}
+                      y={y}
+                      width={barW}
+                      height={Math.max(h, 6)}
+                      rx={6}
+                      fill={colors.accent}
+                      stroke={isSelected ? colors.accentDeep : colors.ink}
+                      strokeWidth={isSelected ? 3 : 1.5}
+                      onPress={() => setSelectedDate(b.date)}
+                    />
+                  ) : (
+                    /* Clean baseline indicator for 0g days without bulky black capsule */
+                    <Rect
+                      x={x}
+                      y={topPadding + chartH - (isSelected ? 5 : 2)}
+                      width={barW}
+                      height={isSelected ? 5 : 2}
+                      rx={2}
+                      fill={isSelected ? colors.accent : colors.track}
+                      stroke={isSelected ? colors.ink : "none"}
+                      strokeWidth={isSelected ? 1.5 : 0}
+                      onPress={() => setSelectedDate(b.date)}
+                    />
+                  )}
+
+                  {/* Show value text ONLY when bar has data OR is selected */}
+                  {(hasData || isSelected) && (
+                    <SvgText
+                      x={barCenter}
+                      y={hasData ? y - 6 : topPadding + chartH - 10}
+                      textAnchor="middle"
+                      fontSize={11}
+                      fontFamily={fonts.monoSemibold}
+                      fill={isSelected ? colors.accentDeep : colors.ink}
+                    >
+                      {`${b.grams}g`}
+                    </SvgText>
+                  )}
+                </React.Fragment>
               );
             })}
           </Svg>
+
+          {/* Day Labels Row - Aligned with Bar Center */}
           <View style={[styles.dayLabelsRow, { width: chartW }]}>
-            {buckets.map((b, i) => (
-              <Text key={i} style={[styles.dayLabel, { width: chartW / 7 }]}>
-                {b.date.toLocaleDateString([], { weekday: "narrow" })}
-              </Text>
-            ))}
+            {buckets.map((b, i) => {
+              const isSelected = isSameDate(b.date, selectedDate);
+              return (
+                <Pressable
+                  key={i}
+                  onPress={() => setSelectedDate(b.date)}
+                  style={[styles.dayLabelCell, { width: barW, marginRight: i < DAYS_TO_SHOW - 1 ? barGap : 0 }]}
+                >
+                  <Text style={[styles.dayLabelText, isSelected && styles.dayLabelTextSelected]}>
+                    {b.date.toLocaleDateString([], { weekday: "narrow" })}
+                  </Text>
+                  <Text style={[styles.dateSubText, isSelected && styles.dateSubTextSelected]}>
+                    {b.date.getDate()}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
-          {dailyGrams > 0 && (
-            <Text style={styles.chartFootnote}>Dashed line = daily target ({dailyGrams}g). Mustard bars = all planned meals logged.</Text>
+
+          <View style={styles.legendRow}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: colors.accent }]} />
+              <Text style={styles.legendText}>Fed</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendLine, { borderColor: colors.accentDeep }]} />
+              <Text style={styles.legendText}>Daily Target</Text>
+            </View>
+            <Text style={styles.legendHint}>Tap any bar to view date</Text>
+          </View>
+        </NeoBox>
+
+        {/* BROWSE BY DAY - WEEK STRIP CALENDAR */}
+        <Text style={styles.sectionLabel}>BROWSE BY DAY</Text>
+        <NeoBox depth={3} radius={20} style={styles.calendarCard}>
+          <WeekStrip selected={selectedDate} onSelect={setSelectedDate} markedDates={appointmentDates} />
+        </NeoBox>
+
+        {/* CIRCULAR PROGRESS RING (FROM HOME SCREEN) */}
+        <NeoBox depth={4} radius={24} style={styles.ringCard}>
+          <Text style={styles.ringHeaderTitle}>
+            PROGRESS · {selectedDate.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }).toUpperCase()}
+          </Text>
+          <View style={styles.ringWrap}>
+            <Ring pct={ringPct} />
+            <View style={styles.ringCenter}>
+              <Text style={styles.ringTotal}>{dayTotal}g</Text>
+              <Text style={styles.ringTarget}>of {dailyGrams || "—"}g</Text>
+            </View>
+          </View>
+          <View style={styles.ringStatsRow}>
+            <View style={{ alignItems: "center" }}>
+              <Text style={[styles.ringStatValue, { color: colors.sage }]}>{remainingGrams}g</Text>
+              <Text style={styles.ringStatLabel}>remaining</Text>
+            </View>
+            <View style={{ alignItems: "center" }}>
+              <Text style={styles.ringStatValue}>{dayLogs.length}/{totalMealsPerDay}</Text>
+              <Text style={styles.ringStatLabel}>meals logged</Text>
+            </View>
+            <View style={{ alignItems: "center" }}>
+              <Text style={styles.ringStatValue}>{record.foods.length}</Text>
+              <Text style={styles.ringStatLabel}>{record.foods.length === 1 ? "food" : "foods"}</Text>
+            </View>
+          </View>
+
+          {record.foods.length > 1 && (
+            <View style={styles.perFoodWrap}>
+              {record.foods.map((f) => {
+                const fTotal = dayLogs.filter((l) => l.foodId === f.id).reduce((s, l) => s + l.grams, 0);
+                const fDaily = Number(f.dailyGrams) || 0;
+                return (
+                  <View key={f.id} style={styles.perFoodRow}>
+                    <View style={[styles.perFoodDot, { backgroundColor: f.category === "dry" ? colors.accent : colors.sage }]} />
+                    <Text style={styles.perFoodLabel} numberOfLines={1}>{f.foodName}</Text>
+                    <Text style={styles.perFoodValue}>{fTotal}g / {fDaily || "—"}g</Text>
+                  </View>
+                );
+              })}
+            </View>
           )}
         </NeoBox>
 
-        <Text style={styles.sectionLabel}>DAY BY DAY</Text>
-        <View style={{ gap: 10 }}>
-          {[...buckets].reverse().map((b, i) => (
-            <View key={i} style={styles.row}>
-              <Text style={styles.rowLabel}>
-                {b.date.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}
-              </Text>
-              <Text style={styles.rowMeta}>{b.meals} meal{b.meals === 1 ? "" : "s"}</Text>
-              <Text style={styles.rowGrams}>{b.grams}g</Text>
+        {/* SEPARATE SECTION 1: VET APPOINTMENTS */}
+        <Text style={styles.sectionLabel}>VET APPOINTMENTS</Text>
+        {dayAppointment ? (
+          <NeoBox depth={3} radius={14} style={{ backgroundColor: colors.accent, marginBottom: 20 }}>
+            <View style={styles.apptRow}>
+              <Calendar size={16} color={colors.ink} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.apptTitle}>
+                  Vet appointment{dayAppointment.time ? ` at ${dayAppointment.time}` : ""}
+                </Text>
+                {(dayAppointment.doctorName || dayAppointment.hospitalName) && (
+                  <Text style={styles.apptVetMeta}>
+                    {[dayAppointment.doctorName, dayAppointment.hospitalName].filter(Boolean).join(" · ")}
+                  </Text>
+                )}
+                {!!dayAppointment.phoneNo && <Text style={styles.apptPhone}>📞 {dayAppointment.phoneNo}</Text>}
+                {!!dayAppointment.note && <Text style={styles.apptNote}>{dayAppointment.note}</Text>}
+              </View>
             </View>
-          ))}
-        </View>
+          </NeoBox>
+        ) : (
+          <Pressable
+            onPress={() => router.push({ pathname: "/(app)/add-appointment", params: { date: selectedIso } })}
+            style={{ marginBottom: 20 }}
+          >
+            <View style={styles.emptyCardRow}>
+              <View style={styles.emptyCardIconWrap}>
+                <Calendar size={16} color={colors.ink} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.emptyCardTitle}>No vet appointment on this day</Text>
+                <Text style={styles.emptyCardSub}>Tap to schedule a vet visit</Text>
+              </View>
+              <Plus size={14} color={colors.accentDeep} />
+            </View>
+          </Pressable>
+        )}
+
+        {/* SEPARATE SECTION 2: MEDICATION REMINDERS */}
+        <Text style={styles.sectionLabel}>MEDICATION REMINDERS</Text>
+        {record.vet.medications.length > 0 ? (
+          <View style={{ marginBottom: 20, gap: 8 }}>
+            {record.vet.medications.map((m) => (
+              <View key={m.id} style={styles.medRow}>
+                <View style={styles.medIconWrap}>
+                  <Pill size={14} color={colors.ink} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.medName}>{m.name}</Text>
+                  {(m.dosage || m.schedule) && (
+                    <Text style={styles.medDetail}>{[m.dosage, m.schedule].filter(Boolean).join(" · ")}</Text>
+                  )}
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Pressable onPress={() => router.push("/(app)/add-medication")} style={{ marginBottom: 20 }}>
+            <View style={styles.emptyCardRow}>
+              <View style={styles.emptyCardIconWrap}>
+                <Pill size={16} color={colors.ink} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.emptyCardTitle}>No medication reminders set</Text>
+                <Text style={styles.emptyCardSub}>Tap to add a medication reminder</Text>
+              </View>
+              <Plus size={14} color={colors.accentDeep} />
+            </View>
+          </Pressable>
+        )}
+
+        {/* FEEDING LOG FOR SELECTED DAY */}
+        <Text style={styles.sectionLabel}>FEEDING LOG</Text>
+        {dayLogs.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>No feedings logged this day.</Text>
+          </View>
+        ) : (
+          <View style={{ gap: 10 }}>
+            {dayLogs.map((l) => {
+              const f = foodFor(l.foodId);
+              return (
+                <View key={l.id} style={styles.logRow}>
+                  <View style={styles.logLeft}>
+                    <UtensilsCrossed size={16} color={colors.ink} />
+                    <View>
+                      <Text style={styles.logLabel}>
+                        {l.label}{f ? ` · ${f.category === "dry" ? "Dry" : "Wet"}` : ""}
+                      </Text>
+                      <View style={styles.logTimeRow}>
+                        <Clock3 size={11} color={colors.inkSoft} />
+                        <Text style={styles.logTime}>
+                          {new Date(l.loggedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                  <Text style={styles.logGrams}>{l.grams}g</Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -182,26 +383,70 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 100, paddingTop: 8 },
   title: { fontFamily: fonts.display, fontSize: 22, color: colors.ink, marginBottom: 2 },
   sub: { fontFamily: fonts.body, fontSize: 13, color: colors.inkSoft, marginBottom: 20 },
-  statsRow: { flexDirection: "row", gap: 10, marginBottom: 20 },
-  statCard: { flex: 1, paddingVertical: 16, alignItems: "center", gap: 4 },
-  statValue: { fontFamily: fonts.monoSemibold, fontSize: 20, color: colors.ink },
-  statLabel: { fontFamily: fonts.body, fontSize: 10.5, color: colors.inkSoft, textAlign: "center" },
-  proteinCard: { flexDirection: "row", alignItems: "center", gap: 14, padding: 14, marginBottom: 20 },
-  proteinValue: { fontFamily: fonts.monoSemibold, fontSize: 26, color: colors.accentDeep },
-  proteinLabel: { fontFamily: fonts.bodySemibold, fontSize: 12.5, color: colors.ink },
-  proteinSub: { fontFamily: fonts.body, fontSize: 10.5, color: colors.inkSoft, marginTop: 2, lineHeight: 14 },
   chartCard: { padding: 18, marginBottom: 20, alignItems: "center" },
-  chartLabel: { alignSelf: "flex-start", fontFamily: fonts.labelBold, fontSize: 11, letterSpacing: 0.5, color: colors.ink, marginBottom: 10 },
-  dayLabelsRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
-  dayLabel: { fontFamily: fonts.body, fontSize: 11, color: colors.inkSoft, textAlign: "center" },
-  chartFootnote: { fontFamily: fonts.body, fontSize: 10.5, color: colors.inkSoft, marginTop: 10, textAlign: "center" },
-  sectionLabel: { fontFamily: fonts.labelBold, fontSize: 12.5, color: colors.ink, letterSpacing: 0.5, marginBottom: 10 },
-  row: {
+  chartHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", width: "100%", marginBottom: 12 },
+  chartLabel: { fontFamily: fonts.labelBold, fontSize: 11, letterSpacing: 0.5, color: colors.ink },
+  targetBadge: { backgroundColor: colors.surfaceAlt, borderRadius: 999, borderWidth: 1.5, borderColor: colors.ink, paddingVertical: 2, paddingHorizontal: 8 },
+  targetBadgeText: { fontFamily: fonts.monoSemibold, fontSize: 10, color: colors.accentDeep },
+  dayLabelsRow: { flexDirection: "row", marginTop: 8 },
+  dayLabelCell: { alignItems: "center" },
+  dayLabelText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.inkSoft },
+  dayLabelTextSelected: { fontFamily: fonts.labelBold, color: colors.accentDeep },
+  dateSubText: { fontFamily: fonts.mono, fontSize: 9.5, color: colors.inkSoft, marginTop: 1 },
+  dateSubTextSelected: { fontFamily: fonts.monoSemibold, color: colors.accentDeep },
+  legendRow: { flexDirection: "row", alignItems: "center", gap: 14, marginTop: 14, borderTopWidth: 1.5, borderTopColor: colors.track, paddingTop: 10, width: "100%" },
+  legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
+  legendDot: { width: 8, height: 8, borderRadius: 999, borderWidth: 1, borderColor: colors.ink },
+  legendLine: { width: 14, height: 0, borderBottomWidth: 2, borderStyle: "dashed" },
+  legendText: { fontFamily: fonts.body, fontSize: 11, color: colors.inkSoft },
+  legendHint: { marginLeft: "auto", fontFamily: fonts.bodyMedium, fontSize: 10.5, color: colors.accentDeep },
+  sectionLabel: { fontFamily: fonts.labelBold, fontSize: 12.5, color: colors.ink, letterSpacing: 0.5, marginBottom: 10, marginTop: 6 },
+  calendarCard: { padding: 16, marginBottom: 18 },
+  ringCard: { paddingVertical: 20, paddingHorizontal: 18, alignItems: "center", marginBottom: 20 },
+  ringHeaderTitle: { alignSelf: "flex-start", fontFamily: fonts.labelBold, fontSize: 11, letterSpacing: 0.5, color: colors.ink, marginBottom: 14 },
+  ringWrap: { width: 180, height: 180 },
+  ringCenter: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center" },
+  ringTotal: { fontFamily: fonts.monoSemibold, fontSize: 28, color: colors.ink },
+  ringTarget: { fontFamily: fonts.mono, fontSize: 12.5, color: colors.inkSoft },
+  ringStatsRow: { flexDirection: "row", gap: 20, marginTop: 16 },
+  ringStatValue: { fontFamily: fonts.monoSemibold, fontSize: 15, color: colors.ink },
+  ringStatLabel: { fontSize: 11, color: colors.inkSoft, marginTop: 2, fontFamily: fonts.body },
+  perFoodWrap: { width: "100%", marginTop: 16, borderTopWidth: 1.5, borderTopColor: colors.track, paddingTop: 12, gap: 8 },
+  perFoodRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  perFoodDot: { width: 8, height: 8, borderRadius: 999 },
+  perFoodLabel: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 12.5, color: colors.ink },
+  perFoodValue: { fontFamily: fonts.mono, fontSize: 11.5, color: colors.inkSoft },
+  apptRow: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12 },
+  apptTitle: { fontFamily: fonts.bodySemibold, fontSize: 13.5, color: colors.ink },
+  apptVetMeta: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: colors.ink, marginTop: 2 },
+  apptPhone: { fontFamily: fonts.mono, fontSize: 11, color: colors.accentDeep, marginTop: 1 },
+  apptNote: { fontFamily: fonts.body, fontSize: 11.5, color: colors.ink, marginTop: 1, opacity: 0.8 },
+  medRow: {
+    flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: 14,
+    borderWidth: 2, borderColor: colors.ink, backgroundColor: colors.surface,
+  },
+  medIconWrap: { width: 30, height: 30, borderRadius: 10, backgroundColor: colors.surfaceAlt, borderWidth: 1.5, borderColor: colors.ink, alignItems: "center", justifyContent: "center" },
+  medName: { fontFamily: fonts.bodySemibold, fontSize: 13.5, color: colors.ink },
+  medDetail: { fontFamily: fonts.body, fontSize: 11.5, color: colors.inkSoft, marginTop: 1 },
+  emptyCardRow: {
+    flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, paddingHorizontal: 14,
+    borderRadius: 14, borderWidth: 2, borderColor: colors.ink, borderStyle: "dashed", backgroundColor: colors.surface,
+  },
+  emptyCardIconWrap: {
+    width: 32, height: 32, borderRadius: 10, backgroundColor: colors.surfaceAlt, borderWidth: 1.5, borderColor: colors.ink,
+    alignItems: "center", justifyContent: "center",
+  },
+  emptyCardTitle: { fontFamily: fonts.bodySemibold, fontSize: 12.5, color: colors.ink },
+  emptyCardSub: { fontFamily: fonts.body, fontSize: 11, color: colors.inkSoft, marginTop: 1 },
+  empty: { backgroundColor: colors.surface, borderRadius: 14, borderWidth: 2, borderColor: colors.ink, padding: 18 },
+  emptyText: { color: colors.inkSoft, fontSize: 13.5, textAlign: "center", fontFamily: fonts.body },
+  logRow: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingVertical: 12, paddingHorizontal: 16, borderRadius: 14, borderWidth: 2, borderColor: colors.ink, backgroundColor: colors.surface,
   },
-  rowLabel: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.ink, flex: 1 },
-  rowMeta: { fontFamily: fonts.body, fontSize: 12, color: colors.inkSoft, marginRight: 12 },
-  rowGrams: { fontFamily: fonts.monoSemibold, color: colors.ink, fontSize: 14 },
-  emptyText: { color: colors.inkSoft, fontSize: 13.5, textAlign: "center", fontFamily: fonts.body },
+  logLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
+  logLabel: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.ink },
+  logTimeRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
+  logTime: { fontSize: 11.5, color: colors.inkSoft, fontFamily: fonts.body },
+  logGrams: { fontFamily: fonts.monoSemibold, color: colors.ink, fontSize: 15 },
 });

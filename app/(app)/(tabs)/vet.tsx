@@ -5,7 +5,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Syringe, Check, Calendar, Pill, Plus, Dog, Cat, CalendarPlus } from "@/components/icons";
 import { PetSwitcherHeader } from "@/components/ui/PetSwitcherHeader";
 import { NeoBox } from "@/components/ui/NeoBox";
-import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { useAppStore } from "@/store/useAppStore";
 import { CORE_VACCINES_CAT, CORE_VACCINES_DOG } from "@/constants/data";
 import { colors, fonts } from "@/theme/tokens";
@@ -86,7 +85,7 @@ export default function Vet() {
             </View>
           </Pressable>
         ) : (
-          <View style={{ gap: 10, marginBottom: 14 }}>
+          <View style={{ gap: 10, marginBottom: 20 }}>
             {upcoming.map((a) => (
               <NeoBox key={a.id} depth={3} radius={14} style={{ backgroundColor: colors.accent }}>
                 <View style={styles.apptRowInner}>
@@ -94,7 +93,16 @@ export default function Vet() {
                     <Calendar size={16} color={colors.ink} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.apptDate}>{new Date(a.date).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</Text>
+                    <Text style={styles.apptDate}>
+                      {new Date(a.date).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}
+                      {a.time ? ` at ${a.time}` : ""}
+                    </Text>
+                    {(a.doctorName || a.hospitalName) && (
+                      <Text style={styles.apptVetMeta}>
+                        {[a.doctorName, a.hospitalName].filter(Boolean).join(" · ")}
+                      </Text>
+                    )}
+                    {!!a.phoneNo && <Text style={styles.apptPhone}>📞 {a.phoneNo}</Text>}
                     {!!a.note && <Text style={styles.apptNote}>{a.note}</Text>}
                   </View>
                   <View style={styles.upcomingBadge}>
@@ -108,7 +116,7 @@ export default function Vet() {
 
         {past.length > 0 && (
           <>
-            <Text style={[styles.sectionLabel, { marginTop: 20 }]}>PAST APPOINTMENTS</Text>
+            <Text style={[styles.sectionLabel, { marginTop: 10 }]}>PAST APPOINTMENTS</Text>
             <View style={{ gap: 10, marginBottom: 20 }}>
               {past.map((a) => (
                 <View key={a.id} style={styles.apptRow}>
@@ -116,7 +124,16 @@ export default function Vet() {
                     <Calendar size={16} color={colors.inkSoft} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.apptDate}>{new Date(a.date).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}</Text>
+                    <Text style={styles.apptDate}>
+                      {new Date(a.date).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}
+                      {a.time ? ` at ${a.time}` : ""}
+                    </Text>
+                    {(a.doctorName || a.hospitalName) && (
+                      <Text style={styles.apptVetMeta}>
+                        {[a.doctorName, a.hospitalName].filter(Boolean).join(" · ")}
+                      </Text>
+                    )}
+                    {!!a.phoneNo && <Text style={styles.apptPhone}>📞 {a.phoneNo}</Text>}
                     {!!a.note && <Text style={styles.apptNote}>{a.note}</Text>}
                   </View>
                 </View>
@@ -132,10 +149,17 @@ export default function Vet() {
             <Text style={styles.addLinkText}>Add</Text>
           </Pressable>
         </View>
+
         {record.vet.medications.length === 0 ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>Not currently on any medication.</Text>
-          </View>
+          <Pressable onPress={() => router.push("/(app)/add-medication")}>
+            <View style={styles.noApptCard}>
+              <View style={styles.noApptIconWrap}>
+                <Pill size={22} color={colors.inkSoft} />
+              </View>
+              <Text style={styles.noApptTitle}>No medications added</Text>
+              <Text style={styles.noApptSub}>Tap to add medication reminders for {record.pet.name}</Text>
+            </View>
+          </Pressable>
         ) : (
           <View style={{ gap: 10, marginBottom: 20 }}>
             {record.vet.medications.map((m) => (
@@ -145,7 +169,9 @@ export default function Vet() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.apptDate}>{m.name}</Text>
-                  <Text style={styles.apptNote}>{[m.dosage, m.schedule].filter(Boolean).join(" · ")}</Text>
+                  {!!(m.dosage || m.schedule) && (
+                    <Text style={styles.apptNote}>{[m.dosage, m.schedule].filter(Boolean).join(" · ")}</Text>
+                  )}
                 </View>
               </View>
             ))}
@@ -209,7 +235,7 @@ const styles = StyleSheet.create({
   petStatLabel: { fontFamily: fonts.body, fontSize: 10.5, color: colors.inkSoft, marginTop: 3 },
 
   noApptCard: {
-    alignItems: "center", justifyContent: "center", paddingVertical: 28, borderRadius: 16,
+    alignItems: "center", justifyContent: "center", paddingVertical: 24, paddingHorizontal: 16, borderRadius: 16,
     borderWidth: 2, borderColor: colors.ink, borderStyle: "dashed", backgroundColor: colors.surfaceAlt, marginBottom: 20,
   },
   noApptIconWrap: {
@@ -217,11 +243,10 @@ const styles = StyleSheet.create({
     borderWidth: 2, borderColor: colors.ink, alignItems: "center", justifyContent: "center", marginBottom: 10,
   },
   noApptTitle: { fontFamily: fonts.bodySemibold, fontSize: 14.5, color: colors.ink },
-  noApptSub: { fontFamily: fonts.body, fontSize: 12, color: colors.inkSoft, marginTop: 3 },
+  noApptSub: { fontFamily: fonts.body, fontSize: 12, color: colors.inkSoft, marginTop: 3, textAlign: "center" },
 
-  empty: { backgroundColor: colors.surface, borderRadius: 14, borderWidth: 2, borderColor: colors.ink, padding: 16, marginBottom: 14 },
   emptyText: { color: colors.inkSoft, fontSize: 13, textAlign: "center", fontFamily: fonts.body },
-  apptRowInner: { flexDirection: "row", alignItems: "center", gap: 12 },
+  apptRowInner: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 14 },
   apptRow: {
     flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: 14,
     backgroundColor: colors.surface, borderWidth: 2, borderColor: colors.ink,
@@ -232,6 +257,8 @@ const styles = StyleSheet.create({
   },
   apptIconWrap: { width: 34, height: 34, borderRadius: 10, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.ink, alignItems: "center", justifyContent: "center" },
   apptDate: { fontFamily: fonts.bodySemibold, fontSize: 13.5, color: colors.ink },
+  apptVetMeta: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: colors.ink, marginTop: 2 },
+  apptPhone: { fontFamily: fonts.mono, fontSize: 11, color: colors.accentDeep, marginTop: 1 },
   apptNote: { fontFamily: fonts.body, fontSize: 11.5, color: colors.inkSoft, marginTop: 2 },
   upcomingBadge: { backgroundColor: colors.ink, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10 },
   upcomingBadgeText: { fontFamily: fonts.bodySemibold, fontSize: 10.5, color: colors.onInk },

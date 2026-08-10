@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { View, Text, ScrollView, NativeSyntheticEvent, NativeScrollEvent, LayoutChangeEvent, StyleSheet } from "react-native";
 import { colors, fonts } from "@/theme/tokens";
 
@@ -37,7 +37,15 @@ export function RulerWeightPicker({ valueKg, onChangeKg }: Props) {
   const [display, setDisplay] = useState(valueKg);
   const [containerWidth, setContainerWidth] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
-  const hasLaidOut = useRef(false);
+  const didInit = useRef(false);
+  // A scroll we still need to perform once the ScrollView's native content
+  // size is actually committed. Calling scrollTo() right after onLayout (via
+  // requestAnimationFrame) is not reliable — the outer container being
+  // measured doesn't guarantee the ScrollView's own content view has been
+  // created yet, so an early scrollTo can silently land short of its target.
+  // onContentSizeChange fires exactly when that content is ready, so queuing
+  // the scroll here and firing it there is the correct, race-free pattern.
+  const pendingScroll = useRef<number | null>(null);
 
   const range = RANGE[unit];
   const halfVisible = containerWidth / 2;
@@ -51,22 +59,24 @@ export function RulerWeightPicker({ valueKg, onChangeKg }: Props) {
     scrollRef.current?.scrollTo({ x, animated });
   }
 
-  // Initial layout: once we know the container's width (needed to compute
-  // side padding so any value can reach the center pointer), scroll to the
-  // pet's current weight.
   function onLayout(e: LayoutChangeEvent) {
     const w = e.nativeEvent.layout.width;
     setContainerWidth(w);
+    if (!didInit.current) {
+      didInit.current = true;
+      setDisplay(currentInUnit);
+      pendingScroll.current = currentInUnit;
+    }
   }
 
-  useEffect(() => {
-    if (containerWidth > 0 && !hasLaidOut.current) {
-      hasLaidOut.current = true;
-      setDisplay(currentInUnit);
-      requestAnimationFrame(() => scrollToValue(currentInUnit, false));
+  function onContentSizeChange() {
+    if (pendingScroll.current !== null) {
+      const target = pendingScroll.current;
+      pendingScroll.current = null;
+      // Content is now guaranteed measured — safe to jump immediately.
+      scrollToValue(target, false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [containerWidth]);
+  }
 
   function handleScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
     const x = e.nativeEvent.contentOffset.x;
@@ -82,10 +92,13 @@ export function RulerWeightPicker({ valueKg, onChangeKg }: Props) {
   function switchUnit(next: Unit) {
     if (next === unit) return;
     const kg = unit === "kg" ? display : lbToKg(display);
-    const nextDisplay = next === "kg" ? kg : kgToLb(kg);
+    const nextDisplay = Math.round((next === "kg" ? kg : kgToLb(kg)) * 10) / 10;
     setUnit(next);
-    setDisplay(Math.round(nextDisplay * 10) / 10);
-    requestAnimationFrame(() => scrollToValue(nextDisplay, false));
+    setDisplay(nextDisplay);
+    // Changing `unit` changes the tick range/totalWidth, so the ScrollView's
+    // content size changes too — that re-fires onContentSizeChange, which
+    // performs this scroll once the new content is actually ready.
+    pendingScroll.current = nextDisplay;
   }
 
   const ticks = Array.from({ length: totalSteps + 1 }, (_, i) => range.min + i);
@@ -121,6 +134,7 @@ export function RulerWeightPicker({ valueKg, onChangeKg }: Props) {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: halfVisible }}
+            onContentSizeChange={onContentSizeChange}
             onScroll={handleScroll}
             onScrollEndDrag={commit}
             onMomentumScrollEnd={commit}

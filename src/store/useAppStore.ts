@@ -40,7 +40,15 @@ interface AppState {
 
   addLog: (petId: string, foodId: string, grams: number, label: string) => FeedingLog;
   addRestock: (petId: string, foodId: string, grams: number, note: string) => StockEntry;
-  addAppointment: (petId: string, date: string, note: string) => VetAppointment;
+  addAppointment: (
+    petId: string,
+    date: string,
+    note: string,
+    time?: string,
+    hospitalName?: string,
+    doctorName?: string,
+    phoneNo?: string
+  ) => VetAppointment;
   addMedication: (petId: string, name: string, dosage: string, schedule: string) => Medication;
   setVetFrequency: (petId: string, frequency: string) => void;
 
@@ -156,8 +164,17 @@ export const useAppStore = create<AppState>()(
         return entry;
       },
 
-      addAppointment: (petId, date, note) => {
-        const entry: VetAppointment = { id: String(Date.now()), date, note, completed: false };
+      addAppointment: (petId, date, note, time, hospitalName, doctorName, phoneNo) => {
+        const entry: VetAppointment = {
+          id: String(Date.now()),
+          date,
+          note,
+          time: time || undefined,
+          hospitalName: hospitalName || undefined,
+          doctorName: doctorName || undefined,
+          phoneNo: phoneNo || undefined,
+          completed: false,
+        };
         const record = get().pets[petId];
         if (!record) return entry;
         set({
