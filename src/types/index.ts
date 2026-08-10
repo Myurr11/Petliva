@@ -1,4 +1,5 @@
 export type PetType = "cat" | "dog";
+export type FoodCategory = "dry" | "wet";
 
 export interface UserProfile {
   name: string;
@@ -16,7 +17,10 @@ export interface Pet {
   medicalNotes: string;
 }
 
-export interface FeedingPlan {
+/** One food a pet eats — a pet can have several (e.g. one dry + one wet). */
+export interface FoodItem {
+  id: string;
+  category: FoodCategory;
   foodName: string;
   dailyGrams: string;
   mealsPerDay: number;
@@ -51,6 +55,8 @@ export interface PetFoodProduct {
 
 export interface FeedingLog {
   id: string;
+  /** Which FoodItem this feeding was of. */
+  foodId: string;
   grams: number;
   label: string;
   /** ISO timestamp captured automatically at the moment of logging */
@@ -59,6 +65,8 @@ export interface FeedingLog {
 
 export interface StockEntry {
   id: string;
+  /** Which FoodItem this restock is for. */
+  foodId: string;
   grams: number;
   note: string;
   /** ISO timestamp */
@@ -90,7 +98,7 @@ export interface VetInfo {
 export interface PetRecord {
   id: string;
   pet: Pet;
-  plan: FeedingPlan;
+  foods: FoodItem[];
   logs: FeedingLog[];
   restocks: StockEntry[];
   vet: VetInfo;

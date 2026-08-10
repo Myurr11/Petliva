@@ -189,7 +189,7 @@ function PetStat({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.appBg },
-  content: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 8 },
+  content: { paddingHorizontal: 20, paddingBottom: 100, paddingTop: 8 },
   sectionLabel: { fontFamily: fonts.labelBold, fontSize: 12.5, color: colors.ink, letterSpacing: 0.5, marginBottom: 10 },
   sectionHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 },
   addLink: { flexDirection: "row", alignItems: "center", gap: 3, marginBottom: 10 },

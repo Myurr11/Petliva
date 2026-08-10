@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, Pressable } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { X } from "@/components/icons";
 import { Chip } from "@/components/ui/Chip";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
@@ -18,16 +18,21 @@ const QUICK_SIZES = [
 ];
 
 export default function AddRestock() {
+  const params = useLocalSearchParams<{ foodId?: string; foodName?: string }>();
   const activePetId = useAppStore((s) => s.activePetId);
+  const foods = useAppStore((s) => (s.activePetId ? s.pets[s.activePetId]?.foods : undefined)) ?? [];
   const addRestock = useAppStore((s) => s.addRestock);
+  const foodId = params.foodId ?? foods[0]?.id ?? "";
+  const foodName = params.foodName ?? foods.find((f) => f.id === foodId)?.foodName ?? "";
+
   const [grams, setGrams] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
 
   async function save() {
-    if (!activePetId || !grams) return;
+    if (!activePetId || !foodId || !grams) return;
     setSaving(true);
-    const entry = addRestock(activePetId, Number(grams), note);
+    const entry = addRestock(activePetId, foodId, Number(grams), note);
     try {
       await insertRestock(activePetId, entry);
     } catch {
@@ -45,6 +50,8 @@ export default function AddRestock() {
           <X size={16} color={colors.ink} />
         </Pressable>
       </View>
+
+      {!!foodName && <Text style={styles.forFood}>For {foodName}</Text>}
 
       <Text style={styles.label}>Quick sizes</Text>
       <View style={styles.chipRow}>
@@ -73,7 +80,7 @@ export default function AddRestock() {
       />
 
       <View style={{ flex: 1, minHeight: 20 }} />
-      <PrimaryButton label={saving ? "Saving…" : "Save restock"} disabled={!grams || saving} onPress={save} />
+      <PrimaryButton label={saving ? "Saving…" : "Save restock"} disabled={!grams || !foodId || saving} onPress={save} />
     </View>
   );
 }
@@ -83,6 +90,7 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 18 },
   title: { fontFamily: fonts.display, fontSize: 19, color: colors.ink },
   closeBtn: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 2, borderColor: colors.ink, padding: 6 },
+  forFood: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.inkSoft, marginBottom: 16 },
   label: { fontFamily: fonts.labelBold, fontSize: 14, color: colors.ink, marginBottom: 8, marginTop: 4 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 18 },
   input: {

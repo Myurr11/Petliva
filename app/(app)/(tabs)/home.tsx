@@ -2,12 +2,13 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, Image } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Dog, Plus, UtensilsCrossed, Clock3 } from "@/components/icons";
+import { Plus, UtensilsCrossed, Clock3 } from "@/components/icons";
 import { Ring } from "@/components/ui/Ring";
 import { NeoBox } from "@/components/ui/NeoBox";
 import { PetSwitcherHeader } from "@/components/ui/PetSwitcherHeader";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
+import type { FoodItem } from "@/types";
 
 export default function Home() {
   const pets = useAppStore((s) => s.pets);
@@ -15,7 +16,7 @@ export default function Home() {
   const startAddPet = useAppStore((s) => s.startAddPet);
   const todayLogs = useAppStore((s) => s.todayLogs());
   const todayTotal = useAppStore((s) => s.todayTotal());
-  const [ingredientsOpen, setIngredientsOpen] = useState(false);
+  const [openFoodId, setOpenFoodId] = useState<string | null>(null);
 
   const active = activePetId ? pets[activePetId] : undefined;
 
@@ -43,11 +44,16 @@ export default function Home() {
     );
   }
 
-  const { pet, plan } = active;
-  const dailyGrams = Number(plan.dailyGrams) || 0;
-  const pct = dailyGrams ? Math.min(100, Math.round((todayTotal / dailyGrams) * 100)) : 0;
-  const remaining = Math.max(0, dailyGrams - todayTotal);
-  const perMealSuggestion = plan.mealsPerDay ? Math.round(dailyGrams / plan.mealsPerDay) : 0;
+  const { pet, foods } = active;
+  const totalDailyGrams = foods.reduce((sum, f) => sum + (Number(f.dailyGrams) || 0), 0);
+  const pct = totalDailyGrams ? Math.min(100, Math.round((todayTotal / totalDailyGrams) * 100)) : 0;
+  const remaining = Math.max(0, totalDailyGrams - todayTotal);
+  const totalMealsPerDay = foods.reduce((sum, f) => sum + f.mealsPerDay, 0);
+
+  function foodLabel(foodId: string) {
+    const f = foods.find((x) => x.id === foodId);
+    return f ? f.foodName : "Food";
+  }
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
@@ -59,53 +65,42 @@ export default function Home() {
             <Ring pct={pct} />
             <View style={styles.ringCenter}>
               <Text style={styles.ringTotal}>{todayTotal}g</Text>
-              <Text style={styles.ringTarget}>of {plan.dailyGrams || "—"}g</Text>
+              <Text style={styles.ringTarget}>of {totalDailyGrams || "—"}g</Text>
             </View>
           </View>
           <View style={styles.statsRow}>
             <Stat value={`${remaining}g`} label="remaining" color={colors.sage} />
-            <Stat value={`${todayLogs.length}/${plan.mealsPerDay}`} label="meals logged" />
-            <Stat value={plan.foodName || "—"} label="food" />
+            <Stat value={`${todayLogs.length}/${totalMealsPerDay}`} label="meals logged" />
+            <Stat value={`${foods.length}`} label={foods.length === 1 ? "food" : "foods"} />
           </View>
+
+          {foods.length > 1 && (
+            <View style={styles.perFoodWrap}>
+              {foods.map((f) => {
+                const fTotal = todayLogs.filter((l) => l.foodId === f.id).reduce((s, l) => s + l.grams, 0);
+                const fDaily = Number(f.dailyGrams) || 0;
+                return (
+                  <View key={f.id} style={styles.perFoodRow}>
+                    <View style={[styles.perFoodDot, { backgroundColor: f.category === "dry" ? colors.accent : colors.sage }]} />
+                    <Text style={styles.perFoodLabel} numberOfLines={1}>{f.foodName}</Text>
+                    <Text style={styles.perFoodValue}>{fTotal}g / {fDaily || "—"}g</Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
         </NeoBox>
 
         <Pressable onPress={() => router.push("/(app)/log-meal")}>
           <NeoBox depth={4} radius={999} style={styles.logBtn}>
             <Plus size={18} color={colors.onAccent} />
-            <Text style={styles.logBtnLabel}>Log a feeding — suggested {perMealSuggestion}g</Text>
+            <Text style={styles.logBtnLabel}>Log a feeding</Text>
           </NeoBox>
         </Pressable>
 
-        {(plan.foodBrand || plan.foodImageUrl || plan.proteinPct) && (
-          <Pressable onPress={() => plan.foodIngredientsText && setIngredientsOpen((v) => !v)}>
-            <NeoBox depth={3} radius={16} style={styles.foodCard}>
-              {plan.foodImageUrl ? (
-                <Image source={{ uri: plan.foodImageUrl }} style={styles.foodImage} />
-              ) : (
-                <View style={[styles.foodImage, styles.foodImageFallback]}>
-                  <UtensilsCrossed size={18} color={colors.ink} />
-                </View>
-              )}
-              <View style={{ flex: 1 }}>
-                <Text style={styles.foodName} numberOfLines={1}>{plan.foodName}</Text>
-                {!!plan.foodBrand && <Text style={styles.foodBrand}>{plan.foodBrand}</Text>}
-                {(plan.proteinPct || plan.fatPct || plan.fiberPct) && (
-                  <View style={styles.macroRow}>
-                    {plan.proteinPct ? <MacroBadge label="protein" value={plan.proteinPct} /> : null}
-                    {plan.fatPct ? <MacroBadge label="fat" value={plan.fatPct} /> : null}
-                    {plan.fiberPct ? <MacroBadge label="fiber" value={plan.fiberPct} /> : null}
-                  </View>
-                )}
-                {!!plan.foodIngredientsText && (
-                  <Text style={styles.ingredientsToggle}>{ingredientsOpen ? "Hide ingredients ▲" : "Show ingredients ▼"}</Text>
-                )}
-                {ingredientsOpen && !!plan.foodIngredientsText && (
-                  <Text style={styles.ingredientsText}>{plan.foodIngredientsText}</Text>
-                )}
-              </View>
-            </NeoBox>
-          </Pressable>
-        )}
+        {foods.map((food) => (
+          <FoodCard key={food.id} food={food} open={openFoodId === food.id} onToggle={() => setOpenFoodId(openFoodId === food.id ? null : food.id)} />
+        ))}
 
         <Text style={styles.sectionLabel}>TODAY'S LOG</Text>
         {todayLogs.length === 0 ? (
@@ -121,7 +116,7 @@ export default function Home() {
                 <View style={styles.logLeft}>
                   <UtensilsCrossed size={16} color={colors.ink} />
                   <View>
-                    <Text style={styles.logLabel}>{l.label}</Text>
+                    <Text style={styles.logLabel}>{l.label} {foods.length > 1 ? `· ${foodLabel(l.foodId)}` : ""}</Text>
                     <View style={styles.logTimeRow}>
                       <Clock3 size={11} color={colors.inkSoft} />
                       <Text style={styles.logTime}>
@@ -137,6 +132,43 @@ export default function Home() {
         )}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function FoodCard({ food, open, onToggle }: { food: FoodItem; open: boolean; onToggle: () => void }) {
+  if (!food.foodBrand && !food.foodImageUrl && !food.proteinPct) return null;
+  return (
+    <Pressable onPress={() => food.foodIngredientsText && onToggle()}>
+      <NeoBox depth={3} radius={16} style={styles.foodCard}>
+        {food.foodImageUrl ? (
+          <Image source={{ uri: food.foodImageUrl }} style={styles.foodImage} />
+        ) : (
+          <View style={[styles.foodImage, styles.foodImageFallback]}>
+            <UtensilsCrossed size={18} color={colors.ink} />
+          </View>
+        )}
+        <View style={{ flex: 1 }}>
+          <View style={styles.foodNameRow}>
+            <View style={[styles.miniBadge, { backgroundColor: food.category === "dry" ? colors.accent : colors.sageBg }]}>
+              <Text style={styles.miniBadgeText}>{food.category === "dry" ? "Dry" : "Wet"}</Text>
+            </View>
+            <Text style={styles.foodName} numberOfLines={1}>{food.foodName}</Text>
+          </View>
+          {!!food.foodBrand && <Text style={styles.foodBrand}>{food.foodBrand}</Text>}
+          {(food.proteinPct || food.fatPct || food.fiberPct) && (
+            <View style={styles.macroRow}>
+              {food.proteinPct ? <MacroBadge label="protein" value={food.proteinPct} /> : null}
+              {food.fatPct ? <MacroBadge label="fat" value={food.fatPct} /> : null}
+              {food.fiberPct ? <MacroBadge label="fiber" value={food.fiberPct} /> : null}
+            </View>
+          )}
+          {!!food.foodIngredientsText && (
+            <Text style={styles.ingredientsToggle}>{open ? "Hide ingredients ▲" : "Show ingredients ▼"}</Text>
+          )}
+          {open && !!food.foodIngredientsText && <Text style={styles.ingredientsText}>{food.foodIngredientsText}</Text>}
+        </View>
+      </NeoBox>
+    </Pressable>
   );
 }
 
@@ -159,7 +191,7 @@ function Stat({ value, label, color = colors.ink }: { value: string; label: stri
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.appBg },
-  content: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 8 },
+  content: { paddingHorizontal: 20, paddingBottom: 100, paddingTop: 8 },
   emptyStateWrap: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, paddingHorizontal: 20 },
   emptyStateBtn: {
     flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: colors.accent,
@@ -174,22 +206,30 @@ const styles = StyleSheet.create({
   statsRow: { flexDirection: "row", gap: 20, marginTop: 16 },
   statValue: { fontFamily: fonts.monoSemibold, fontSize: 15 },
   statLabel: { fontSize: 11, color: colors.inkSoft, marginTop: 2 },
+  perFoodWrap: { width: "100%", marginTop: 18, borderTopWidth: 2, borderTopColor: colors.ink, paddingTop: 12, gap: 8 },
+  perFoodRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  perFoodDot: { width: 8, height: 8, borderRadius: 999 },
+  perFoodLabel: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 12.5, color: colors.ink },
+  perFoodValue: { fontFamily: fonts.mono, fontSize: 11.5, color: colors.inkSoft },
   logBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     backgroundColor: colors.accent, paddingVertical: 16, marginBottom: 22,
   },
   logBtnLabel: { fontFamily: fonts.labelBold, color: colors.onAccent, fontSize: 15 },
-  foodCard: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, marginBottom: 20 },
+  foodCard: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, marginBottom: 14 },
   foodImage: { width: 48, height: 48, borderRadius: 10, backgroundColor: colors.surfaceAlt },
   foodImageFallback: { alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: colors.ink },
-  foodName: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.ink },
+  foodNameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  foodName: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.ink, flexShrink: 1 },
   foodBrand: { fontFamily: fonts.body, fontSize: 11.5, color: colors.inkSoft, marginTop: 1 },
+  miniBadge: { borderRadius: 999, borderWidth: 1.5, borderColor: colors.ink, paddingVertical: 2, paddingHorizontal: 7 },
+  miniBadgeText: { fontFamily: fonts.labelBold, fontSize: 9.5, color: colors.ink },
   macroRow: { flexDirection: "row", gap: 6, marginTop: 6, flexWrap: "wrap" },
   macroBadge: { backgroundColor: colors.surfaceAlt, borderRadius: 999, paddingVertical: 3, paddingHorizontal: 8, borderWidth: 1.5, borderColor: colors.ink },
   macroBadgeText: { fontFamily: fonts.mono, fontSize: 10, color: colors.accentDeep },
   ingredientsToggle: { fontFamily: fonts.bodyMedium, fontSize: 10.5, color: colors.accentDeep, marginTop: 6 },
   ingredientsText: { fontFamily: fonts.body, fontSize: 11, color: colors.inkSoft, marginTop: 4, lineHeight: 15 },
-  sectionLabel: { fontFamily: fonts.labelBold, fontSize: 12.5, color: colors.ink, letterSpacing: 0.5, marginBottom: 10 },
+  sectionLabel: { fontFamily: fonts.labelBold, fontSize: 12.5, color: colors.ink, letterSpacing: 0.5, marginBottom: 10, marginTop: 6 },
   empty: { backgroundColor: colors.surface, borderRadius: 14, borderWidth: 2, borderColor: colors.ink, padding: 18 },
   emptyText: { color: colors.inkSoft, fontSize: 13.5, textAlign: "center", fontFamily: fonts.body },
   logRow: {

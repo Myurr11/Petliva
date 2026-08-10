@@ -79,8 +79,18 @@ Email/password sign-up works out of the box with no extra config.
 Full app reskin, neo-brutalist: warm cream background (`#FCF9F8`), thick 2px black borders on every card/button/input, hard offset shadows with no blur (built via `NeoBox` — real RN shadow props render as a soft Android `elevation` blur, not the crisp offset rectangle this style needs, so it's faked correctly with stacked Views instead), solid mustard (`#FFC107`) for selected/primary states, Plus Jakarta Sans headlines + Be Vietnam Pro body text. Every screen — onboarding, auth, all four tabs, all four modals — uses the same system. All tokens live in `src/theme/tokens.ts`; the shared components (`Chip`, `PrimaryButton`, `TextField`, `ScreenTitle`, `ProgressDots`, `Ring`, `NeoBox`, `NeoOnboardHeader`, `PetSwitcherHeader`) are what make the look cascade everywhere without per-screen one-offs.
 
 ## Navigation
-- **Home / Insights / Vet / Food** — bottom tabs. Each one starts with a shared `PetSwitcherHeader` (pet chips + profile icon), so every tab is always scoped to whichever pet is selected and account access is never more than one tap away.
-- **Profile** — moved out of the tab bar to a top-right header icon (tap it from any tab). Pushed as a regular screen with a back button, not a tab, since it's account-level rather than per-pet.
+- **Home / Insights / Vet / Food** — bottom tabs, now a **floating pill-shaped bar** (rounded, inset from the screen edges, soft lifted shadow) rather than a full-width rectangle. Each tab starts with the shared `PetSwitcherHeader` (pet chips + profile icon).
+- **Profile** — a top-right header icon on every tab, not in the tab bar at all (pushed as a regular screen with a back button).
+
+## Multi-food (dry + wet)
+A pet can now have several foods instead of exactly one — typically one dry + one wet, optionally more:
+- **Onboarding** (`food-plan.tsx`, step 8): shows a dry-food card and a wet-food card by default, each with its own Open Pet Food Facts search, daily grams, and meals/day. Leave either blank if it doesn't apply. "Add dry food" / "Add wet food" buttons below append more cards for pets fed 3+ foods.
+- **Home**: the ring shows *combined* progress (today's total across all foods vs. the summed daily target); a per-food breakdown list appears under the ring once a pet has more than one food. Each food gets its own card lower down (image, brand, macros, expandable ingredients).
+- **Log a feeding**: if a pet has more than one food, a food picker (chips, e.g. "Dry · Royal Canin Fit 32") appears first; grams/suggestion adjust to whichever food is selected.
+- **Food tab (Inventory)**: one stock card *per food* — each with its own remaining grams, days-left estimate, and restock history. "Log a restock" is scoped to that specific food.
+- **Insights**: daily target and meals-per-day are summed across all foods; "estimated protein fed today" is now a weighted sum (each food's grams-fed-today × its own protein %).
+- **Data model**: `PetRecord.foods: FoodItem[]` replaced the old singular `plan: FeedingPlan`. `FeedingLog` and `StockEntry` both gained a `foodId` so every log/restock is scoped to a specific food. Supabase gained a `foods` table (superseding `feeding_plans`, which is left in place unused rather than dropped, so no historical data is lost) plus `food_id` columns on `feeding_logs` and `food_stock`.
+- **Migration**: `useAppStore.ts` is now on persisted-state version 4. The v3→v4 step automatically wraps any existing single-food pet's plan into one `FoodItem` (tagged "dry") and backfills `foodId` onto all of that pet's existing logs/restocks — no data loss, no re-onboarding needed, runs once on first launch after updating.
 
 ## What's wired up
 - Full onboarding, now 8 steps: auth → profile → pet type → breed → weight → vaccinations → medical history → **vet care** (new) → feeding plan

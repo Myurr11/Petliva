@@ -3,14 +3,14 @@ import { View, Text, TextInput, Image, Pressable, ActivityIndicator, StyleSheet 
 import { X, Check } from "@/components/icons";
 import { colors, fonts, radii } from "@/theme/tokens";
 import { searchPetFood } from "@/lib/petFoodApi";
-import type { FeedingPlan, PetFoodProduct } from "@/types";
+import type { FoodItem, PetFoodProduct } from "@/types";
 
 interface Props {
-  plan: FeedingPlan;
-  onChange: (p: Partial<FeedingPlan>) => void;
+  food: FoodItem;
+  onChange: (p: Partial<FoodItem>) => void;
 }
 
-const CLEAR_FIELDS: Partial<FeedingPlan> = {
+const CLEAR_FIELDS: Partial<FoodItem> = {
   foodBrand: undefined,
   foodImageUrl: undefined,
   foodBarcode: undefined,
@@ -22,14 +22,14 @@ const CLEAR_FIELDS: Partial<FeedingPlan> = {
   kcalPer100g: undefined,
 };
 
-export function FoodSearchField({ plan, onChange }: Props) {
-  const [query, setQuery] = useState(plan.foodName);
+export function FoodSearchField({ food, onChange }: Props) {
+  const [query, setQuery] = useState(food.foodName);
   const [results, setResults] = useState<PetFoodProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const isSelected = !!plan.foodBrand || !!plan.foodBarcode;
+  const isSelected = !!food.foodBrand || !!food.foodBarcode;
 
   useEffect(() => {
     if (isSelected) return; // don't re-search once a product is locked in
@@ -90,19 +90,19 @@ export function FoodSearchField({ plan, onChange }: Props) {
 
       {isSelected ? (
         <View style={styles.selectedCard}>
-          {plan.foodImageUrl ? (
-            <Image source={{ uri: plan.foodImageUrl }} style={styles.thumb} />
+          {food.foodImageUrl ? (
+            <Image source={{ uri: food.foodImageUrl }} style={styles.thumb} />
           ) : (
             <View style={[styles.thumb, styles.thumbFallback]} />
           )}
           <View style={{ flex: 1 }}>
-            <Text style={styles.selectedName} numberOfLines={1}>{plan.foodName}</Text>
-            {!!plan.foodBrand && <Text style={styles.selectedBrand}>{plan.foodBrand}</Text>}
-            {(plan.proteinPct || plan.fatPct || plan.fiberPct) && (
+            <Text style={styles.selectedName} numberOfLines={1}>{food.foodName}</Text>
+            {!!food.foodBrand && <Text style={styles.selectedBrand}>{food.foodBrand}</Text>}
+            {(food.proteinPct || food.fatPct || food.fiberPct) && (
               <Text style={styles.selectedMacros}>
-                {plan.proteinPct ? `${plan.proteinPct}% protein` : null}
-                {plan.fatPct ? ` · ${plan.fatPct}% fat` : null}
-                {plan.fiberPct ? ` · ${plan.fiberPct}% fiber` : null}
+                {food.proteinPct ? `${food.proteinPct}% protein` : null}
+                {food.fatPct ? ` · ${food.fatPct}% fat` : null}
+                {food.fiberPct ? ` · ${food.fiberPct}% fiber` : null}
               </Text>
             )}
           </View>

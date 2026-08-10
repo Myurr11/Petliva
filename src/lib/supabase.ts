@@ -1,7 +1,7 @@
 import "react-native-url-polyfill/auto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
-import type { Pet, FeedingPlan, FeedingLog, StockEntry, VetInfo, VetAppointment, Medication } from "@/types";
+import type { Pet, FoodItem, FeedingLog, StockEntry, VetInfo, VetAppointment, Medication } from "@/types";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL as string;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY as string;
@@ -22,9 +22,17 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 // See supabase/schema.sql for the table definitions + RLS policies these
-// helpers assume (pets, feeding_plans, feeding_logs).
+// helpers assume (pets, foods, feeding_logs, food_stock, vet_appointments,
+// medications).
 
-export async function createPetAndPlan(pet: Pet, plan: FeedingPlan, vet: VetInfo) {
+/**
+ * Creates the pet row, one row in `foods` per FoodItem, and any vet
+ * appointments/medications captured during onboarding. Returns the new
+ * pet's id plus a map from each food's local draft id to its real Supabase
+ * id, so the caller can finalize local state with ids that match what
+ * future feeding_logs/food_stock inserts need to reference.
+ */
+export async function createPetAndFoods(pet: Pet, foods: FoodItem[], vet: VetInfo) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -48,22 +56,33 @@ export async function createPetAndPlan(pet: Pet, plan: FeedingPlan, vet: VetInfo
     .single();
   if (petErr) throw petErr;
 
-  const { error: planErr } = await supabase.from("feeding_plans").insert({
-    pet_id: petRow.id,
-    food_name: plan.foodName,
-    daily_grams: Number(plan.dailyGrams),
-    meals_per_day: plan.mealsPerDay,
-    food_brand: plan.foodBrand ?? null,
-    food_image_url: plan.foodImageUrl ?? null,
-    food_barcode: plan.foodBarcode ?? null,
-    food_ingredients_text: plan.foodIngredientsText ?? null,
-    protein_pct: plan.proteinPct ?? null,
-    fat_pct: plan.fatPct ?? null,
-    fiber_pct: plan.fiberPct ?? null,
-    ash_pct: plan.ashPct ?? null,
-    kcal_100g: plan.kcalPer100g ?? null,
-  });
-  if (planErr) throw planErr;
+  const usableFoods = foods.filter((f) => f.foodName.trim() && f.dailyGrams.trim());
+  const foodIdMap: Record<string, string> = {};
+
+  for (const food of usableFoods) {
+    const { data: foodRow, error: foodErr } = await supabase
+      .from("foods")
+      .insert({
+        pet_id: petRow.id,
+        category: food.category,
+        food_name: food.foodName,
+        daily_grams: Number(food.dailyGrams),
+        meals_per_day: food.mealsPerDay,
+        food_brand: food.foodBrand ?? null,
+        food_image_url: food.foodImageUrl ?? null,
+        food_barcode: food.foodBarcode ?? null,
+        food_ingredients_text: food.foodIngredientsText ?? null,
+        protein_pct: food.proteinPct ?? null,
+        fat_pct: food.fatPct ?? null,
+        fiber_pct: food.fiberPct ?? null,
+        ash_pct: food.ashPct ?? null,
+        kcal_100g: food.kcalPer100g ?? null,
+      })
+      .select()
+      .single();
+    if (foodErr) throw foodErr;
+    foodIdMap[food.id] = foodRow.id;
+  }
 
   for (const appt of vet.appointments) {
     await insertAppointment(petRow.id, appt).catch(() => {});
@@ -72,12 +91,13 @@ export async function createPetAndPlan(pet: Pet, plan: FeedingPlan, vet: VetInfo
     await insertMedication(petRow.id, med).catch(() => {});
   }
 
-  return petRow.id as string;
+  return { petId: petRow.id as string, foodIdMap };
 }
 
 export async function insertFeedingLog(petId: string, log: FeedingLog) {
   const { error } = await supabase.from("feeding_logs").insert({
     pet_id: petId,
+    food_id: log.foodId,
     grams: log.grams,
     label: log.label,
     logged_at: log.loggedAt,
@@ -88,6 +108,7 @@ export async function insertFeedingLog(petId: string, log: FeedingLog) {
 export async function insertRestock(petId: string, entry: StockEntry) {
   const { error } = await supabase.from("food_stock").insert({
     pet_id: petId,
+    food_id: entry.foodId,
     grams: entry.grams,
     note: entry.note,
     added_at: entry.addedAt,

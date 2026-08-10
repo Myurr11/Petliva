@@ -47,12 +47,11 @@ function computeStreak(buckets: { grams: number; meals: number }[], mealsPerDay:
 
 export default function Insights() {
   const record = useAppStore((s) => (s.activePetId ? s.pets[s.activePetId] : undefined));
-  const todayTotal = useAppStore((s) => s.todayTotal());
 
   const { buckets, streak, consistencyPct, avgGrams } = useMemo(() => {
     if (!record) return { buckets: [], streak: 0, consistencyPct: 0, avgGrams: 0 };
     const b = buildDailyBreakdown(record.logs, DAYS_TO_SHOW);
-    const mealsPerDay = record.plan.mealsPerDay || 0;
+    const mealsPerDay = record.foods.reduce((sum, f) => sum + f.mealsPerDay, 0);
     const s = computeStreak(b, mealsPerDay);
     const daysHit = b.filter((d) => mealsPerDay > 0 && d.meals >= mealsPerDay).length;
     const pct = Math.round((daysHit / DAYS_TO_SHOW) * 100);
@@ -71,11 +70,22 @@ export default function Insights() {
     );
   }
 
-  const dailyGrams = Number(record.plan.dailyGrams) || 0;
+  const dailyGrams = record.foods.reduce((sum, f) => sum + (Number(f.dailyGrams) || 0), 0);
+  const totalMealsPerDay = record.foods.reduce((sum, f) => sum + f.mealsPerDay, 0);
   const chartMax = Math.max(dailyGrams, ...buckets.map((b) => b.grams), 1) * 1.15;
   const chartW = 300, chartH = 140, barGap = 10;
   const barW = (chartW - barGap * (DAYS_TO_SHOW - 1)) / DAYS_TO_SHOW;
   const targetY = chartH - (dailyGrams / chartMax) * chartH;
+
+  const today = new Date();
+  const proteinToday = record.foods.reduce((sum, f) => {
+    if (!f.proteinPct) return sum;
+    const grams = record.logs
+      .filter((l) => l.foodId === f.id && new Date(l.loggedAt).toDateString() === today.toDateString())
+      .reduce((s, l) => s + l.grams, 0);
+    return sum + (grams * f.proteinPct) / 100;
+  }, 0);
+  const hasProteinData = record.foods.some((f) => f.proteinPct);
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
@@ -101,13 +111,13 @@ export default function Insights() {
           </NeoBox>
         </View>
 
-        {!!record.plan.proteinPct && (
+        {hasProteinData && (
           <NeoBox depth={3} radius={16} style={styles.proteinCard}>
-            <Text style={styles.proteinValue}>{Math.round((todayTotal * record.plan.proteinPct) / 100)}g</Text>
+            <Text style={styles.proteinValue}>{Math.round(proteinToday)}g</Text>
             <View style={{ flex: 1 }}>
               <Text style={styles.proteinLabel}>estimated protein fed today</Text>
               <Text style={styles.proteinSub}>
-                Based on {record.plan.proteinPct}% protein in {record.plan.foodName} (from Open Pet Food Facts) × {todayTotal}g fed
+                Summed across each food's protein % (from Open Pet Food Facts) × grams fed today
               </Text>
             </View>
           </NeoBox>
@@ -122,7 +132,7 @@ export default function Insights() {
             {buckets.map((b, i) => {
               const h = chartMax ? (b.grams / chartMax) * chartH : 0;
               const x = i * (barW + barGap);
-              const hit = record.plan.mealsPerDay > 0 && b.meals >= record.plan.mealsPerDay;
+              const hit = totalMealsPerDay > 0 && b.meals >= totalMealsPerDay;
               return (
                 <Rect
                   key={i}
@@ -169,7 +179,7 @@ export default function Insights() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.appBg },
-  content: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 8 },
+  content: { paddingHorizontal: 20, paddingBottom: 100, paddingTop: 8 },
   title: { fontFamily: fonts.display, fontSize: 22, color: colors.ink, marginBottom: 2 },
   sub: { fontFamily: fonts.body, fontSize: 13, color: colors.inkSoft, marginBottom: 20 },
   statsRow: { flexDirection: "row", gap: 10, marginBottom: 20 },

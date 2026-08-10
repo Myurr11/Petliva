@@ -39,6 +39,10 @@ create table if not exists medications (
   created_at timestamptz default now()
 );
 
+-- Superseded by `foods` below (a pet can now have several foods — e.g. one
+-- dry + one wet — instead of exactly one). Left in place, unused, so
+-- existing installs don't lose any historical data; nothing in the app
+-- writes to this table anymore.
 create table if not exists feeding_plans (
   id uuid primary key default gen_random_uuid(),
   pet_id uuid references pets on delete cascade not null,
@@ -48,36 +52,53 @@ create table if not exists feeding_plans (
   updated_at timestamptz default now()
 );
 
--- Open Pet Food Facts columns — safe to run even if feeding_plans already
--- exists without them (this is exactly that case for you right now).
-alter table feeding_plans add column if not exists food_brand text;
-alter table feeding_plans add column if not exists food_image_url text;
-alter table feeding_plans add column if not exists food_barcode text;
-alter table feeding_plans add column if not exists food_ingredients_text text;
-alter table feeding_plans add column if not exists protein_pct numeric;
-alter table feeding_plans add column if not exists fat_pct numeric;
-alter table feeding_plans add column if not exists fiber_pct numeric;
-alter table feeding_plans add column if not exists ash_pct numeric;
-alter table feeding_plans add column if not exists kcal_100g numeric;
+-- One row per food a pet eats (typically one "dry" + one "wet", optionally
+-- more). Replaces the single food_name/daily_grams columns that used to
+-- live directly on feeding_plans.
+create table if not exists foods (
+  id uuid primary key default gen_random_uuid(),
+  pet_id uuid references pets on delete cascade not null,
+  category text not null check (category in ('dry','wet')),
+  food_name text,
+  daily_grams numeric not null,
+  meals_per_day int not null default 1,
+  food_brand text,
+  food_image_url text,
+  food_barcode text,
+  food_ingredients_text text,
+  protein_pct numeric,
+  fat_pct numeric,
+  fiber_pct numeric,
+  ash_pct numeric,
+  kcal_100g numeric,
+  created_at timestamptz default now()
+);
 
 create table if not exists feeding_logs (
   id uuid primary key default gen_random_uuid(),
   pet_id uuid references pets on delete cascade not null,
+  food_id uuid references foods on delete set null,
   grams numeric not null,
   label text not null,
   logged_at timestamptz default now()
 );
 
+alter table feeding_logs add column if not exists food_id uuid references foods on delete set null;
+
 create table if not exists food_stock (
   id uuid primary key default gen_random_uuid(),
   pet_id uuid references pets on delete cascade not null,
+  food_id uuid references foods on delete set null,
   grams numeric not null,
   note text,
   added_at timestamptz default now()
 );
 
+alter table food_stock add column if not exists food_id uuid references foods on delete set null;
+
 alter table pets enable row level security;
 alter table feeding_plans enable row level security;
+alter table foods enable row level security;
 alter table feeding_logs enable row level security;
 alter table food_stock enable row level security;
 alter table vet_appointments enable row level security;
@@ -94,6 +115,12 @@ create policy "Users manage plans for their own pets"
   on feeding_plans for all
   using (exists (select 1 from pets where pets.id = feeding_plans.pet_id and pets.user_id = auth.uid()))
   with check (exists (select 1 from pets where pets.id = feeding_plans.pet_id and pets.user_id = auth.uid()));
+
+drop policy if exists "Users manage foods for their own pets" on foods;
+create policy "Users manage foods for their own pets"
+  on foods for all
+  using (exists (select 1 from pets where pets.id = foods.pet_id and pets.user_id = auth.uid()))
+  with check (exists (select 1 from pets where pets.id = foods.pet_id and pets.user_id = auth.uid()));
 
 drop policy if exists "Users manage logs for their own pets" on feeding_logs;
 create policy "Users manage logs for their own pets"
