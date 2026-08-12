@@ -90,6 +90,10 @@ export interface Medication {
   name: string;
   dosage: string;
   schedule: string;
+  /** ISO date (YYYY-MM-DD) the course starts. */
+  startDate: string;
+  /** How many days the course runs, starting from startDate (inclusive). */
+  durationDays: number;
 }
 
 export interface VetInfo {

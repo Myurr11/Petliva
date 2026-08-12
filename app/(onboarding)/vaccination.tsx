@@ -50,7 +50,7 @@ export default function VaccinationStep() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.appBg },
+  screen: { flex: 1, backgroundColor: colors.appBg, paddingTop: 38},
   content: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32, flexGrow: 1 },
   list: { gap: 10 },
   item: {

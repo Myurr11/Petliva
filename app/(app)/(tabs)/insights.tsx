@@ -11,6 +11,7 @@ import { WeekStrip } from "@/components/ui/WeekStrip";
 import { toISODate, isSameDate } from "@/components/ui/CalendarGrid";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
+import { getMedicationStatus } from "@/lib/medicationStatus";
 import type { FeedingLog } from "@/types";
 
 const DAYS_TO_SHOW = 7;
@@ -80,6 +81,9 @@ export default function Insights() {
     .sort((a, b) => +new Date(a.loggedAt) - +new Date(b.loggedAt));
   const dayTotal = dayLogs.reduce((sum, l) => sum + l.grams, 0);
   const dayAppointment = record.vet.appointments.find((a) => a.date === selectedIso);
+  const dayMedications = record.vet.medications
+    .map((m) => ({ m, status: getMedicationStatus(m, selectedDate) }))
+    .filter(({ status }) => status.state === "active");
 
   const ringPct = dailyGrams ? Math.min(100, Math.round((dayTotal / dailyGrams) * 100)) : 0;
   const remainingGrams = Math.max(0, dailyGrams - dayTotal);
@@ -310,9 +314,9 @@ export default function Insights() {
 
         {/* SEPARATE SECTION 2: MEDICATION REMINDERS */}
         <Text style={styles.sectionLabel}>MEDICATION REMINDERS</Text>
-        {record.vet.medications.length > 0 ? (
+        {dayMedications.length > 0 ? (
           <View style={{ marginBottom: 20, gap: 8 }}>
-            {record.vet.medications.map((m) => (
+            {dayMedications.map(({ m, status }) => (
               <View key={m.id} style={styles.medRow}>
                 <View style={styles.medIconWrap}>
                   <Pill size={14} color={colors.ink} />
@@ -322,6 +326,9 @@ export default function Insights() {
                   {(m.dosage || m.schedule) && (
                     <Text style={styles.medDetail}>{[m.dosage, m.schedule].filter(Boolean).join(" · ")}</Text>
                   )}
+                </View>
+                <View style={styles.medDayBadge}>
+                  <Text style={styles.medDayBadgeText}>Day {status.dayOfCourse}</Text>
                 </View>
               </View>
             ))}
@@ -333,8 +340,12 @@ export default function Insights() {
                 <Pill size={16} color={colors.ink} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.emptyCardTitle}>No medication reminders set</Text>
-                <Text style={styles.emptyCardSub}>Tap to add a medication reminder</Text>
+                <Text style={styles.emptyCardTitle}>
+                  {record.vet.medications.length === 0 ? "No medication reminders set" : "None due this day"}
+                </Text>
+                <Text style={styles.emptyCardSub}>
+                  {record.vet.medications.length === 0 ? "Tap to add a medication reminder" : "Add another course if needed"}
+                </Text>
               </View>
               <Plus size={14} color={colors.accentDeep} />
             </View>
@@ -428,6 +439,8 @@ const styles = StyleSheet.create({
   medIconWrap: { width: 30, height: 30, borderRadius: 10, backgroundColor: colors.surfaceAlt, borderWidth: 1.5, borderColor: colors.ink, alignItems: "center", justifyContent: "center" },
   medName: { fontFamily: fonts.bodySemibold, fontSize: 13.5, color: colors.ink },
   medDetail: { fontFamily: fonts.body, fontSize: 11.5, color: colors.inkSoft, marginTop: 1 },
+  medDayBadge: { backgroundColor: colors.sageBg, borderRadius: 999, borderWidth: 1.5, borderColor: colors.ink, paddingVertical: 4, paddingHorizontal: 9 },
+  medDayBadgeText: { fontFamily: fonts.labelBold, fontSize: 10, color: colors.ink },
   emptyCardRow: {
     flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, paddingHorizontal: 14,
     borderRadius: 14, borderWidth: 2, borderColor: colors.ink, borderStyle: "dashed", backgroundColor: colors.surface,

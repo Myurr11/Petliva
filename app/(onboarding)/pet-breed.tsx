@@ -51,7 +51,7 @@ export default function PetBreedStep() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.appBg },
+  screen: { flex: 1, backgroundColor: colors.appBg, paddingTop: 38 },
   content: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32, flexGrow: 1 },
   wrap: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   spacer: { flex: 1, minHeight: 24 },

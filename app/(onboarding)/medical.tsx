@@ -49,8 +49,8 @@ export default function MedicalStep() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.appBg },
-  content: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32, flexGrow: 1 },
+  screen: { flex: 1, backgroundColor: colors.appBg, paddingTop: 38 },
+  content: { paddingHorizontal: 24, paddingBottom: 32, flexGrow: 1 },
   wrap: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 18 },
   label: { fontFamily: fonts.labelBold, fontSize: 14, color: colors.ink, marginBottom: 8 },
   textarea: {

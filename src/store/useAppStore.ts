@@ -6,6 +6,14 @@ import type {
   VetInfo, VetAppointment, Medication, FoodCategory,
 } from "@/types";
 
+function todayISO() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 interface AppState {
   isAuthed: boolean;
   hasOnboarded: boolean;
@@ -49,7 +57,7 @@ interface AppState {
     doctorName?: string,
     phoneNo?: string
   ) => VetAppointment;
-  addMedication: (petId: string, name: string, dosage: string, schedule: string) => Medication;
+  addMedication: (petId: string, name: string, dosage: string, schedule: string, startDate: string, durationDays: number) => Medication;
   setVetFrequency: (petId: string, frequency: string) => void;
 
   todayLogs: (petId?: string) => FeedingLog[];
@@ -186,8 +194,8 @@ export const useAppStore = create<AppState>()(
         return entry;
       },
 
-      addMedication: (petId, name, dosage, schedule) => {
-        const entry: Medication = { id: String(Date.now()), name, dosage, schedule };
+      addMedication: (petId, name, dosage, schedule, startDate, durationDays) => {
+        const entry: Medication = { id: String(Date.now()), name, dosage, schedule, startDate, durationDays };
         const record = get().pets[petId];
         if (!record) return entry;
         set({
@@ -252,7 +260,7 @@ export const useAppStore = create<AppState>()(
     {
       name: "bowlkeeper-storage",
       storage: createJSONStorage(() => AsyncStorage),
-      version: 4,
+      version: 5,
       migrate: (persisted: any, fromVersion) => {
         let state = persisted;
 
@@ -322,6 +330,26 @@ export const useAppStore = create<AppState>()(
           }
           state = { ...state, pets, foodsDraft: state.foodsDraft ?? defaultFoodsDraft() };
           delete state.plan;
+        }
+
+        // v4 -> v5: Medication gained startDate/durationDays (a prescribed
+        // course now has a real date range instead of showing forever).
+        // Existing medications didn't have these — treat them as having
+        // started today with a generous 30-day duration, so they still show
+        // up as "active" rather than silently disappearing; the user can
+        // correct the real dates from the Vet tab if needed.
+        if (fromVersion < 5 && state) {
+          const pets = { ...(state.pets ?? {}) };
+          const todayIso = todayISO();
+          for (const id of Object.keys(pets)) {
+            const record = pets[id];
+            if (!record.vet?.medications?.length) continue;
+            const medications = record.vet.medications.map((m: any) =>
+              m.startDate ? m : { ...m, startDate: todayIso, durationDays: 30 }
+            );
+            pets[id] = { ...record, vet: { ...record.vet, medications } };
+          }
+          state = { ...state, pets };
         }
 
         return state;

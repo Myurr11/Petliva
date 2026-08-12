@@ -118,8 +118,8 @@ export default function FoodPlanStep() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.appBg },
-  content: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32, flexGrow: 1 },
+  screen: { flex: 1, backgroundColor: colors.appBg, paddingTop: 38 },
+  content: { paddingHorizontal: 24, paddingBottom: 32, flexGrow: 1 },
   foodCard: { padding: 16, marginBottom: 16 },
   foodCardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 },
   categoryBadge: { borderRadius: 999, borderWidth: 2, borderColor: colors.ink, paddingVertical: 5, paddingHorizontal: 12 },

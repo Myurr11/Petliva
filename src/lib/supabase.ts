@@ -136,6 +136,8 @@ export async function insertMedication(petId: string, med: Medication) {
     name: med.name,
     dosage: med.dosage,
     schedule: med.schedule,
+    start_date: med.startDate || null,
+    duration_days: med.durationDays || null,
   });
   if (error) throw error;
 }

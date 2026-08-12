@@ -93,6 +93,16 @@ Full app reskin, neo-brutalist: warm cream background (`#FCF9F8`), thick 2px bla
 - **Insights tab redesign**: below the existing streak/consistency/chart stats, a week-strip calendar lets you browse any day. Selecting a day shows that day's feeding log (all foods, with times and grams) and, if there was one, a highlighted vet-appointment card for that date — or a quick "Add a vet appointment for this day" prompt if there wasn't one, pre-filled with the date you tapped.
 - **Home tab**: a reminder card surfaces the next couple of upcoming vet appointments and any active medications, tappable through to the Vet tab for full detail.
 
+## Medication courses (start date + duration)
+Medications now have a real prescribed date range instead of showing forever:
+- **`add-medication.tsx`**: after dosage/schedule presets, pick a start date (via `DateField`) and a duration in days (3/5/7/10/14 preset chips, or Custom). Shows a "Runs Aug 10 through Aug 13" confirmation as you fill it in.
+- **`src/lib/medicationStatus.ts`**: the one shared helper (`getMedicationStatus`) every screen uses to compute a medication's `upcoming` / `active` / `completed` state and "day X of Y" for any given date — so the logic for "is this course covering today?" lives in exactly one place.
+- **Home**: only shows medications actually active *today*, with a "Day X" badge. If a course hasn't started yet or has finished, it no longer clutters the reminder card.
+- **Vet tab**: lists every medication ever added, sorted active → upcoming → completed, each with its date range and status badge; completed courses are dimmed rather than hidden, so history isn't lost.
+- **Insights**: the day-detail medication section is now scoped to whichever day you're browsing — a course only shows up on days it actually covers, with the same "Day X" badge.
+- **Data model**: `Medication` gained `startDate` (ISO date) and `durationDays`. Supabase's `medications` table gained matching `start_date`/`duration_days` columns.
+- **Migration**: store is now on persisted-state version 5. Existing medications (added before this change, with no date range) are backfilled as starting today with a 30-day duration — so they keep showing as active rather than silently vanishing; correct the real dates from the Vet tab if needed.
+
 ## Multi-food (dry + wet)
 A pet can now have several foods instead of exactly one — typically one dry + one wet, optionally more:
 - **Onboarding** (`food-plan.tsx`, step 8): shows a dry-food card and a wet-food card by default, each with its own Open Pet Food Facts search, daily grams, and meals/day. Leave either blank if it doesn't apply. "Add dry food" / "Add wet food" buttons below append more cards for pets fed 3+ foods.

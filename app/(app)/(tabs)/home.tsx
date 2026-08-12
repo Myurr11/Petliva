@@ -8,6 +8,7 @@ import { NeoBox } from "@/components/ui/NeoBox";
 import { PetSwitcherHeader } from "@/components/ui/PetSwitcherHeader";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
+import { getMedicationStatus } from "@/lib/medicationStatus";
 import type { FoodItem } from "@/types";
 
 function isUpcoming(dateStr: string) {
@@ -66,7 +67,7 @@ export default function Home() {
     .filter((a) => !a.completed && isUpcoming(a.date))
     .sort((a, b) => +new Date(a.date) - +new Date(b.date))
     .slice(0, 2);
-  const medications = active.vet.medications;
+  const medications = active.vet.medications.filter((m) => getMedicationStatus(m).state === "active");
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
@@ -167,29 +168,39 @@ export default function Home() {
                 <Pill size={16} color={colors.ink} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.emptyCardTitle}>No medication reminders set</Text>
-                <Text style={styles.emptyCardSub}>Tap to add medication schedule</Text>
+                <Text style={styles.emptyCardTitle}>
+                  {active.vet.medications.length === 0 ? "No medication reminders set" : "Nothing due today"}
+                </Text>
+                <Text style={styles.emptyCardSub}>
+                  {active.vet.medications.length === 0 ? "Tap to add medication schedule" : "See all courses in the Vet tab"}
+                </Text>
               </View>
               <Plus size={14} color={colors.accentDeep} />
             </View>
           </Pressable>
         ) : (
           <View style={{ gap: 10, marginBottom: 20 }}>
-            {medications.map((m) => (
-              <Pressable key={m.id} onPress={() => router.push("/(app)/(tabs)/vet")}>
-                <View style={styles.medRow}>
-                  <View style={styles.medIconWrap}>
-                    <Pill size={14} color={colors.ink} />
+            {medications.map((m) => {
+              const status = getMedicationStatus(m);
+              return (
+                <Pressable key={m.id} onPress={() => router.push("/(app)/(tabs)/vet")}>
+                  <View style={styles.medRow}>
+                    <View style={styles.medIconWrap}>
+                      <Pill size={14} color={colors.ink} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.medName}>{m.name}</Text>
+                      {!!(m.dosage || m.schedule) && (
+                        <Text style={styles.medDetail}>{[m.dosage, m.schedule].filter(Boolean).join(" · ")}</Text>
+                      )}
+                    </View>
+                    <View style={styles.medDayBadge}>
+                      <Text style={styles.medDayBadgeText}>Day {status.dayOfCourse}</Text>
+                    </View>
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.medName}>{m.name}</Text>
-                    {!!(m.dosage || m.schedule) && (
-                      <Text style={styles.medDetail}>{[m.dosage, m.schedule].filter(Boolean).join(" · ")}</Text>
-                    )}
-                  </View>
-                </View>
-              </Pressable>
-            ))}
+                </Pressable>
+              );
+            })}
           </View>
         )}
 
@@ -328,6 +339,8 @@ const styles = StyleSheet.create({
   medIconWrap: { width: 30, height: 30, borderRadius: 10, backgroundColor: colors.surfaceAlt, borderWidth: 1.5, borderColor: colors.ink, alignItems: "center", justifyContent: "center" },
   medName: { fontFamily: fonts.bodySemibold, fontSize: 13.5, color: colors.ink },
   medDetail: { fontFamily: fonts.body, fontSize: 11.5, color: colors.inkSoft, marginTop: 1 },
+  medDayBadge: { backgroundColor: colors.sageBg, borderRadius: 999, borderWidth: 1.5, borderColor: colors.ink, paddingVertical: 4, paddingHorizontal: 9 },
+  medDayBadgeText: { fontFamily: fonts.labelBold, fontSize: 10, color: colors.ink },
 
   emptyCardRow: {
     flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, paddingHorizontal: 14,

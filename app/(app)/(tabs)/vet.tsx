@@ -8,6 +8,7 @@ import { NeoBox } from "@/components/ui/NeoBox";
 import { useAppStore } from "@/store/useAppStore";
 import { CORE_VACCINES_CAT, CORE_VACCINES_DOG } from "@/constants/data";
 import { colors, fonts } from "@/theme/tokens";
+import { getMedicationStatus } from "@/lib/medicationStatus";
 
 function isPast(dateStr: string) {
   const d = new Date(dateStr);
@@ -162,19 +163,42 @@ export default function Vet() {
           </Pressable>
         ) : (
           <View style={{ gap: 10, marginBottom: 20 }}>
-            {record.vet.medications.map((m) => (
-              <View key={m.id} style={styles.medRow}>
-                <View style={styles.apptIconWrap}>
-                  <Pill size={16} color={colors.ink} />
+            {[...record.vet.medications]
+              .map((m) => ({ m, status: getMedicationStatus(m) }))
+              .sort((a, b) => {
+                const order = { active: 0, upcoming: 1, completed: 2 };
+                return order[a.status.state] - order[b.status.state];
+              })
+              .map(({ m, status }) => (
+                <View key={m.id} style={[styles.medRow, status.state === "completed" && { opacity: 0.55 }]}>
+                  <View style={styles.apptIconWrap}>
+                    <Pill size={16} color={colors.ink} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.apptDate}>{m.name}</Text>
+                    {!!(m.dosage || m.schedule) && (
+                      <Text style={styles.apptNote}>{[m.dosage, m.schedule].filter(Boolean).join(" · ")}</Text>
+                    )}
+                    <Text style={styles.medDateRange}>
+                      {new Date(status.startDate + "T00:00:00").toLocaleDateString([], { month: "short", day: "numeric" })}
+                      {" – "}
+                      {new Date(status.endDate + "T00:00:00").toLocaleDateString([], { month: "short", day: "numeric" })}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.medStatusBadge,
+                      status.state === "active" && { backgroundColor: colors.sageBg },
+                      status.state === "upcoming" && { backgroundColor: colors.surfaceAlt },
+                      status.state === "completed" && { backgroundColor: colors.track },
+                    ]}
+                  >
+                    <Text style={styles.medStatusText}>
+                      {status.state === "active" ? `Day ${status.dayOfCourse}` : status.state === "upcoming" ? "Upcoming" : "Done"}
+                    </Text>
+                  </View>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.apptDate}>{m.name}</Text>
-                  {!!(m.dosage || m.schedule) && (
-                    <Text style={styles.apptNote}>{[m.dosage, m.schedule].filter(Boolean).join(" · ")}</Text>
-                  )}
-                </View>
-              </View>
-            ))}
+              ))}
           </View>
         )}
 
@@ -260,6 +284,9 @@ const styles = StyleSheet.create({
   apptVetMeta: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: colors.ink, marginTop: 2 },
   apptPhone: { fontFamily: fonts.mono, fontSize: 11, color: colors.accentDeep, marginTop: 1 },
   apptNote: { fontFamily: fonts.body, fontSize: 11.5, color: colors.inkSoft, marginTop: 2 },
+  medDateRange: { fontFamily: fonts.mono, fontSize: 10.5, color: colors.inkSoft, marginTop: 3 },
+  medStatusBadge: { borderRadius: 999, borderWidth: 1.5, borderColor: colors.ink, paddingVertical: 4, paddingHorizontal: 9 },
+  medStatusText: { fontFamily: fonts.labelBold, fontSize: 10.5, color: colors.ink },
   upcomingBadge: { backgroundColor: colors.ink, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10 },
   upcomingBadgeText: { fontFamily: fonts.bodySemibold, fontSize: 10.5, color: colors.onInk },
   vaccineCard: { padding: 16 },

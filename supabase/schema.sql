@@ -45,8 +45,13 @@ create table if not exists medications (
   name text not null,
   dosage text,
   schedule text,
+  start_date date,
+  duration_days int,
   created_at timestamptz default now()
 );
+
+alter table medications add column if not exists start_date date;
+alter table medications add column if not exists duration_days int;
 
 -- Superseded by `foods` below (a pet can now have several foods — e.g. one
 -- dry + one wet — instead of exactly one). Left in place, unused, so
