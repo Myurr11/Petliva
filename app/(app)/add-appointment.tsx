@@ -6,22 +6,27 @@ import { DateField } from "@/components/ui/DateField";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
-import { insertAppointment } from "@/lib/supabase";
+import { insertAppointment, updateAppointment as updateRemoteAppointment } from "@/lib/supabase";
 
 const TIME_PRESETS = ["09:00 AM", "10:30 AM", "02:00 PM", "04:30 PM", "Custom"];
 
 export default function AddAppointment() {
-  const params = useLocalSearchParams<{ date?: string }>();
+  const params = useLocalSearchParams<{ date?: string; appointmentId?: string }>();
   const activePetId = useAppStore((s) => s.activePetId);
+  const appointment = useAppStore((s) => activePetId && params.appointmentId ? s.pets[activePetId]?.vet.appointments.find((a) => a.id === params.appointmentId) : undefined);
   const addAppointment = useAppStore((s) => s.addAppointment);
+  const updateAppointment = useAppStore((s) => s.updateAppointment);
+  const syncAppointmentId = useAppStore((s) => s.syncAppointmentId);
 
-  const [date, setDate] = useState(params.date ?? "");
-  const [selectedTimePreset, setSelectedTimePreset] = useState<string>("10:30 AM");
-  const [customTime, setCustomTime] = useState("");
-  const [hospitalName, setHospitalName] = useState("");
-  const [doctorName, setDoctorName] = useState("");
-  const [phoneNo, setPhoneNo] = useState("");
-  const [note, setNote] = useState("");
+  const savedTime = appointment?.time ?? "10:30 AM";
+  const timeIsPreset = TIME_PRESETS.slice(0, -1).includes(savedTime);
+  const [date, setDate] = useState(appointment?.date ?? params.date ?? "");
+  const [selectedTimePreset, setSelectedTimePreset] = useState<string>(timeIsPreset ? savedTime : "Custom");
+  const [customTime, setCustomTime] = useState(timeIsPreset ? "" : savedTime);
+  const [hospitalName, setHospitalName] = useState(appointment?.hospitalName ?? "");
+  const [doctorName, setDoctorName] = useState(appointment?.doctorName ?? "");
+  const [phoneNo, setPhoneNo] = useState(appointment?.phoneNo ?? "");
+  const [note, setNote] = useState(appointment?.note ?? "");
   const [saving, setSaving] = useState(false);
 
   const finalTime = selectedTimePreset === "Custom" ? customTime.trim() : selectedTimePreset;
@@ -29,19 +34,27 @@ export default function AddAppointment() {
   async function save() {
     if (!activePetId || !date.trim()) return;
     setSaving(true);
-    const entry = addAppointment(
-      activePetId,
-      date.trim(),
-      note.trim(),
-      finalTime,
-      hospitalName.trim(),
-      doctorName.trim(),
-      phoneNo.trim()
-    );
+    if (appointment) {
+      const patch = { date: date.trim(), note: note.trim(), time: finalTime, hospitalName: hospitalName.trim(), doctorName: doctorName.trim(), phoneNo: phoneNo.trim() };
+      updateAppointment(activePetId, appointment.id, patch);
+      try {
+        await updateRemoteAppointment({ ...appointment, ...patch });
+      } catch {
+        // The local edit is retained while the device is offline.
+      }
+      setSaving(false);
+      router.back();
+      return;
+    }
+    const entry = addAppointment(activePetId, date.trim(), note.trim(), finalTime, hospitalName.trim(), doctorName.trim(), phoneNo.trim());
     try {
-      await insertAppointment(activePetId, entry);
+      const remoteId = await insertAppointment(activePetId, entry);
+      // Swap the local temp id for the real one so a future delete can
+      // actually find and remove this row in Supabase.
+      syncAppointmentId(activePetId, entry.id, remoteId);
     } catch {
-      // offline-first fallback
+      // offline-first fallback — entry stays with its local id; it'll just
+      // never sync to Supabase until the app supports a retry queue
     }
     setSaving(false);
     router.back();
@@ -50,7 +63,7 @@ export default function AddAppointment() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.sheet}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Add vet appointment</Text>
+        <Text style={styles.title}>{appointment ? "Edit vet appointment" : "Add vet appointment"}</Text>
         <Pressable onPress={() => router.back()} style={styles.closeBtn}>
           <X size={16} color={colors.ink} />
         </Pressable>
@@ -124,7 +137,7 @@ export default function AddAppointment() {
 
       <View style={{ height: 16 }} />
       <PrimaryButton
-        label={saving ? "Saving…" : "Save appointment"}
+        label={saving ? "Saving…" : appointment ? "Save changes" : "Save appointment"}
         disabled={!date.trim() || saving}
         onPress={save}
       />
@@ -134,7 +147,7 @@ export default function AddAppointment() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.appBg },
-  sheet: { paddingHorizontal: 24, paddingTop: 50, paddingBottom: 36 },
+  sheet: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 36 },
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 18 },
   title: { fontFamily: fonts.display, fontSize: 19, color: colors.ink },
   closeBtn: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 2, borderColor: colors.ink, padding: 6 },

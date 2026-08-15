@@ -37,6 +37,8 @@ export const Edit3 = (p: IconProps) => <Feather name="edit-3" size={p.size ?? 20
 export const Stethoscope = (p: IconProps) => <MaterialCommunityIcons name="stethoscope" size={p.size ?? 20} color={p.color ?? "#000"} />;
 export const Calendar = (p: IconProps) => <Feather name="calendar" size={p.size ?? 20} color={p.color ?? "#000"} />;
 export const CalendarPlus = (p: IconProps) => <MaterialCommunityIcons name="calendar-plus" size={p.size ?? 20} color={p.color ?? "#000"} />;
+export const Trash2 = (p: IconProps) => <Feather name="trash-2" size={p.size ?? 20} color={p.color ?? "#000"} />;
+export const MoreVertical = (p: IconProps) => <Feather name="more-vertical" size={p.size ?? 20} color={p.color ?? "#000"} />;
 export const Pill = (p: IconProps) => <MaterialCommunityIcons name="pill" size={p.size ?? 20} color={p.color ?? "#000"} />;
 export const HelpCircle = (p: IconProps) => <Feather name="help-circle" size={p.size ?? 20} color={p.color ?? "#000"} />;
 

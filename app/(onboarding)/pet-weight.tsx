@@ -25,8 +25,8 @@ export default function PetWeightStep() {
           <ChevronLeft size={20} color={colors.ink} />
         </Pressable>
         <View style={styles.dots}>
-          {Array.from({ length: 8 }).map((_, i) => (
-            <View key={i} style={[styles.dot, i === 3 && styles.dotActive]} />
+          {Array.from({ length: 9 }).map((_, i) => (
+            <View key={i} style={[styles.dot, i === 4 && styles.dotActive]} />
           ))}
         </View>
         <View style={{ width: 40 }} />
@@ -45,7 +45,7 @@ export default function PetWeightStep() {
 
       <View style={styles.footer}>
         <Pressable onPress={() => router.push("/(onboarding)/vaccination")}>
-          <NeoBox depth={4} radius={999} style={[styles.ctaBox, { backgroundColor: colors.accent }]}>
+          <NeoBox depth={4} radius={999} style={{ ...styles.ctaBox, backgroundColor: colors.accent }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <Text style={styles.ctaLabel}>Continue</Text>
               <ChevronRight size={18} color={colors.ink} />

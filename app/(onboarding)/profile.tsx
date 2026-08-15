@@ -23,7 +23,7 @@ export default function ProfileStep() {
 
   return (
     <View style={styles.screen}>
-      <NeoOnboardHeader step={1} total={8} />
+      <NeoOnboardHeader step={1} total={9} />
       <ScrollView contentContainerStyle={styles.content}>
         <ScreenTitle title="Tell us about you" sub="This helps us personalize reminders and vet-visit notes." />
         <TextField

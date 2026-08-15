@@ -117,28 +117,70 @@ export async function insertRestock(petId: string, entry: StockEntry) {
 }
 
 export async function insertAppointment(petId: string, appt: VetAppointment) {
-  const { error } = await supabase.from("vet_appointments").insert({
-    pet_id: petId,
-    date: appt.date,
-    time: appt.time ?? null,
-    hospital_name: appt.hospitalName ?? null,
-    doctor_name: appt.doctorName ?? null,
-    phone_no: appt.phoneNo ?? null,
-    note: appt.note,
-    completed: appt.completed,
-  });
+  const { data, error } = await supabase
+    .from("vet_appointments")
+    .insert({
+      pet_id: petId,
+      date: appt.date,
+      time: appt.time ?? null,
+      hospital_name: appt.hospitalName ?? null,
+      doctor_name: appt.doctorName ?? null,
+      phone_no: appt.phoneNo ?? null,
+      note: appt.note,
+      completed: appt.completed,
+    })
+    .select()
+    .single();
   if (error) throw error;
+  return data.id as string;
 }
 
 export async function insertMedication(petId: string, med: Medication) {
-  const { error } = await supabase.from("medications").insert({
-    pet_id: petId,
-    name: med.name,
-    dosage: med.dosage,
-    schedule: med.schedule,
-    start_date: med.startDate || null,
-    duration_days: med.durationDays || null,
-  });
+  const { data, error } = await supabase
+    .from("medications")
+    .insert({
+      pet_id: petId,
+      name: med.name,
+      dosage: med.dosage,
+      schedule: med.schedule,
+      start_date: med.startDate || null,
+      duration_days: med.durationDays || null,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data.id as string;
+}
+
+export async function deleteAppointment(id: string) {
+  const { error } = await supabase.from("vet_appointments").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteMedication(id: string) {
+  const { error } = await supabase.from("medications").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function updateAppointment(appt: VetAppointment) {
+  const { error } = await supabase.from("vet_appointments").update({
+    date: appt.date, time: appt.time ?? null, hospital_name: appt.hospitalName ?? null,
+    doctor_name: appt.doctorName ?? null, phone_no: appt.phoneNo ?? null,
+    note: appt.note, completed: appt.completed,
+  }).eq("id", appt.id);
+  if (error) throw error;
+}
+
+export async function updateMedication(med: Medication) {
+  const { error } = await supabase.from("medications").update({
+    name: med.name, dosage: med.dosage, schedule: med.schedule,
+    start_date: med.startDate || null, duration_days: med.durationDays || null,
+  }).eq("id", med.id);
+  if (error) throw error;
+}
+
+export async function updateVaccinations(petId: string, vaccinations: Pet["vaccinations"]) {
+  const { error } = await supabase.from("pets").update({ vaccinations }).eq("id", petId);
   if (error) throw error;
 }
 

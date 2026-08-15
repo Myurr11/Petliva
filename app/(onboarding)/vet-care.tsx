@@ -32,7 +32,14 @@ export default function VetCareStep() {
         : [];
     const medications =
       onMeds === "yes" && medName.trim().length > 0
-        ? [{ id: String(Date.now()), name: medName.trim(), dosage: medDosage.trim(), schedule: medSchedule.trim() }]
+        ? [{
+            id: String(Date.now()),
+            name: medName.trim(),
+            dosage: medDosage.trim(),
+            schedule: medSchedule.trim(),
+            startDate: new Date().toISOString().slice(0, 10),
+            durationDays: 7,
+          }]
         : [];
     setVetDraft({ appointments, medications });
     router.push("/(onboarding)/food-plan");
@@ -40,7 +47,7 @@ export default function VetCareStep() {
 
   return (
     <View style={styles.screen}>
-      <NeoOnboardHeader step={7} total={8} />
+      <NeoOnboardHeader step={8} total={9} />
       <ScrollView contentContainerStyle={styles.content}>
         <ScreenTitle title="Vet care" sub="This powers appointment and medication reminders — skip anything you don't know yet." />
 
@@ -87,8 +94,8 @@ export default function VetCareStep() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.appBg, paddingTop: 38 },
-  content: { paddingHorizontal: 24, paddingBottom: 32, flexGrow: 1 },
+  screen: { flex: 1, backgroundColor: colors.appBg },
+  content: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32, flexGrow: 1 },
   rowLabel: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
   label: { fontFamily: fonts.labelBold, fontSize: 14, color: colors.ink },
   wrap: { flexDirection: "row", flexWrap: "wrap", gap: 10 },

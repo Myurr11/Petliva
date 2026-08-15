@@ -19,7 +19,7 @@ export default function VaccinationStep() {
 
   return (
     <View style={styles.screen}>
-      <NeoOnboardHeader step={5} total={8} />
+      <NeoOnboardHeader step={6} total={9} />
       <ScrollView contentContainerStyle={styles.content}>
         <ScreenTitle title="Vaccination status" sub="Mark what's completed. You can add dates and boosters later from the Vet tab." />
         <View style={styles.list}>
@@ -50,7 +50,7 @@ export default function VaccinationStep() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.appBg, paddingTop: 38},
+  screen: { flex: 1, backgroundColor: colors.appBg },
   content: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32, flexGrow: 1 },
   list: { gap: 10 },
   item: {

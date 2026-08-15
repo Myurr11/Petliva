@@ -1,30 +1,38 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, Pressable, ScrollView } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { X } from "@/components/icons";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { DateField } from "@/components/ui/DateField";
 import { toISODate } from "@/components/ui/CalendarGrid";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
-import { insertMedication } from "@/lib/supabase";
+import { insertMedication, updateMedication as updateRemoteMedication } from "@/lib/supabase";
 
 const DOSAGE_PRESETS = ["1 tablet", "0.5 tablet", "5 ml", "10 mg", "Custom"];
 const SCHEDULE_PRESETS = ["Once daily", "Twice daily", "Every 8 hours", "With food", "Custom"];
 const DURATION_PRESETS = ["3", "5", "7", "10", "14", "Custom"];
 
 export default function AddMedication() {
+  const params = useLocalSearchParams<{ medicationId?: string }>();
   const activePetId = useAppStore((s) => s.activePetId);
+  const medication = useAppStore((s) => activePetId && params.medicationId ? s.pets[activePetId]?.vet.medications.find((m) => m.id === params.medicationId) : undefined);
   const addMedication = useAppStore((s) => s.addMedication);
+  const updateMedication = useAppStore((s) => s.updateMedication);
+  const syncMedicationId = useAppStore((s) => s.syncMedicationId);
 
-  const [name, setName] = useState("");
-  const [selectedDosagePreset, setSelectedDosagePreset] = useState<string>("1 tablet");
-  const [customDosage, setCustomDosage] = useState("");
-  const [selectedSchedulePreset, setSelectedSchedulePreset] = useState<string>("Once daily");
-  const [customSchedule, setCustomSchedule] = useState("");
-  const [startDate, setStartDate] = useState(toISODate(new Date()));
-  const [durationPreset, setDurationPreset] = useState<string>("7");
-  const [customDuration, setCustomDuration] = useState("");
+  const dosageIsPreset = DOSAGE_PRESETS.slice(0, -1).includes(medication?.dosage ?? "");
+  const scheduleIsPreset = SCHEDULE_PRESETS.slice(0, -1).includes(medication?.schedule ?? "");
+  const savedDuration = medication?.durationDays ? String(medication.durationDays) : "7";
+  const durationIsPreset = DURATION_PRESETS.slice(0, -1).includes(savedDuration);
+  const [name, setName] = useState(medication?.name ?? "");
+  const [selectedDosagePreset, setSelectedDosagePreset] = useState<string>(dosageIsPreset ? medication!.dosage : "Custom");
+  const [customDosage, setCustomDosage] = useState(dosageIsPreset ? "" : medication?.dosage ?? "");
+  const [selectedSchedulePreset, setSelectedSchedulePreset] = useState<string>(scheduleIsPreset ? medication!.schedule : "Custom");
+  const [customSchedule, setCustomSchedule] = useState(scheduleIsPreset ? "" : medication?.schedule ?? "");
+  const [startDate, setStartDate] = useState(medication?.startDate ?? toISODate(new Date()));
+  const [durationPreset, setDurationPreset] = useState<string>(durationIsPreset ? savedDuration : "Custom");
+  const [customDuration, setCustomDuration] = useState(durationIsPreset ? "" : savedDuration);
   const [saving, setSaving] = useState(false);
 
   const finalDosage = selectedDosagePreset === "Custom" ? customDosage.trim() : selectedDosagePreset;
@@ -34,11 +42,24 @@ export default function AddMedication() {
   async function save() {
     if (!activePetId || !name.trim() || !startDate || !finalDurationDays) return;
     setSaving(true);
+    if (medication) {
+      const patch = { name: name.trim(), dosage: finalDosage, schedule: finalSchedule, startDate, durationDays: finalDurationDays };
+      updateMedication(activePetId, medication.id, patch);
+      try {
+        await updateRemoteMedication({ ...medication, ...patch });
+      } catch {
+        // The local edit is retained while the device is offline.
+      }
+      setSaving(false);
+      router.back();
+      return;
+    }
     const entry = addMedication(activePetId, name.trim(), finalDosage, finalSchedule, startDate, finalDurationDays);
     try {
-      await insertMedication(activePetId, entry);
+      const remoteId = await insertMedication(activePetId, entry);
+      syncMedicationId(activePetId, entry.id, remoteId);
     } catch {
-      // offline-first fallback
+      // offline-first fallback — entry stays with its local id
     }
     setSaving(false);
     router.back();
@@ -47,7 +68,7 @@ export default function AddMedication() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.sheet}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Add medication</Text>
+        <Text style={styles.title}>{medication ? "Edit medication" : "Add medication"}</Text>
         <Pressable onPress={() => router.back()} style={styles.closeBtn}>
           <X size={16} color={colors.ink} />
         </Pressable>
@@ -157,7 +178,7 @@ export default function AddMedication() {
 
       <View style={{ height: 16 }} />
       <PrimaryButton
-        label={saving ? "Saving…" : "Save medication"}
+        label={saving ? "Saving…" : medication ? "Save changes" : "Save medication"}
         disabled={!name.trim() || !startDate || !finalDurationDays || saving}
         onPress={save}
       />
@@ -167,7 +188,7 @@ export default function AddMedication() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.appBg },
-  sheet: { paddingHorizontal: 24, paddingTop: 50, paddingBottom: 36 },
+  sheet: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 36 },
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 18 },
   title: { fontFamily: fonts.display, fontSize: 19, color: colors.ink },
   closeBtn: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 2, borderColor: colors.ink, padding: 6 },

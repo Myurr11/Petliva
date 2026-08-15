@@ -23,7 +23,7 @@ export default function MedicalStep() {
 
   return (
     <View style={styles.screen}>
-      <NeoOnboardHeader step={6} total={8} />
+      <NeoOnboardHeader step={7} total={9} />
       <ScrollView contentContainerStyle={styles.content}>
         <ScreenTitle title="Any medical history?" sub="Optional — skip this if nothing applies. You can always add it later." />
         <View style={styles.wrap}>
@@ -49,8 +49,8 @@ export default function MedicalStep() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.appBg, paddingTop: 38 },
-  content: { paddingHorizontal: 24, paddingBottom: 32, flexGrow: 1 },
+  screen: { flex: 1, backgroundColor: colors.appBg },
+  content: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32, flexGrow: 1 },
   wrap: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 18 },
   label: { fontFamily: fonts.labelBold, fontSize: 14, color: colors.ink, marginBottom: 8 },
   textarea: {

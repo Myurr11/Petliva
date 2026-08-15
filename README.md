@@ -93,6 +93,11 @@ Full app reskin, neo-brutalist: warm cream background (`#FCF9F8`), thick 2px bla
 - **Insights tab redesign**: below the existing streak/consistency/chart stats, a week-strip calendar lets you browse any day. Selecting a day shows that day's feeding log (all foods, with times and grams) and, if there was one, a highlighted vet-appointment card for that date — or a quick "Add a vet appointment for this day" prompt if there wasn't one, pre-filled with the date you tapped.
 - **Home tab**: a reminder card surfaces the next couple of upcoming vet appointments and any active medications, tappable through to the Vet tab for full detail.
 
+## Deleting appointments & medications
+- **Vet tab**: every appointment and medication now has a trash icon. Tapping it confirms, then removes it from the device immediately and best-effort deletes it from Supabase too.
+- **The ID-sync fix this needed**: appointments and medications were being created with a local, client-generated id (`Date.now()`-based) that was never reconciled with the real id Supabase assigns on insert — so a delete-by-id call would silently target nothing. `insertAppointment`/`insertMedication` now return the real Supabase id, and `add-appointment.tsx`/`add-medication.tsx` swap the local id for it right after a successful write (`syncAppointmentId`/`syncMedicationId` in the store). Entries added before this fix won't have a matching remote row under their local id — deleting them locally still works fine, the Supabase-side delete for those specific old entries is just a no-op.
+- **Why deleted Supabase rows didn't disappear from the app before this**: the app only ever reads appointments/medications from local on-device storage, never re-fetches from Supabase — so removing rows directly in the Supabase dashboard has no effect on what's already cached on a phone. This is still true for every other entity too (see "Reading logs back from Supabase" below) — deleting from the app itself (now possible) is the reliable way to remove something, not editing the database directly.
+
 ## Medication courses (start date + duration)
 Medications now have a real prescribed date range instead of showing forever:
 - **`add-medication.tsx`**: after dosage/schedule presets, pick a start date (via `DateField`) and a duration in days (3/5/7/10/14 preset chips, or Custom). Shows a "Runs Aug 10 through Aug 13" confirmation as you fill it in.
@@ -102,6 +107,11 @@ Medications now have a real prescribed date range instead of showing forever:
 - **Insights**: the day-detail medication section is now scoped to whichever day you're browsing — a course only shows up on days it actually covers, with the same "Day X" badge.
 - **Data model**: `Medication` gained `startDate` (ISO date) and `durationDays`. Supabase's `medications` table gained matching `start_date`/`duration_days` columns.
 - **Migration**: store is now on persisted-state version 5. Existing medications (added before this change, with no date range) are backfilled as starting today with a 30-day duration — so they keep showing as active rather than silently vanishing; correct the real dates from the Vet tab if needed.
+
+## Separate dry/wet rings + exact-gram logging
+Two real bugs from actual use, both fixed:
+- **Rings were combining dry + wet into one target.** Feeding 63g dry + 80g wet no longer sums to a meaningless 143g goal. Home now shows two separate swipeable ring pages — dry first, swipe to wet, tap either page-dot to jump directly. Each page's ring, remaining-grams, and meals-logged are scoped to only that category's foods. A category with no foods set up shows a plain "not set up yet" message instead of a misleading empty ring at 0%.
+- **Logging was stuck to multiples of 5.** The +/-5 stepper buttons are still there for quick nudges, but the number itself is now a directly-editable text field — tap it and type the exact amount (e.g. 26g out of a 35g meal), rather than only landing on values the stepper happened to produce.
 
 ## Multi-food (dry + wet)
 A pet can now have several foods instead of exactly one — typically one dry + one wet, optionally more:

@@ -58,6 +58,15 @@ interface AppState {
     phoneNo?: string
   ) => VetAppointment;
   addMedication: (petId: string, name: string, dosage: string, schedule: string, startDate: string, durationDays: number) => Medication;
+  updateAppointment: (petId: string, appointmentId: string, patch: Partial<Omit<VetAppointment, "id">>) => void;
+  updateMedication: (petId: string, medicationId: string, patch: Partial<Omit<Medication, "id">>) => void;
+  setVaccinationStatus: (petId: string, name: string, done: boolean) => void;
+  removeAppointment: (petId: string, appointmentId: string) => void;
+  removeMedication: (petId: string, medicationId: string) => void;
+  /** Swaps a local-generated id for the real Supabase-assigned one once the
+   *  insert succeeds, so a later delete can actually target the right row. */
+  syncAppointmentId: (petId: string, localId: string, remoteId: string) => void;
+  syncMedicationId: (petId: string, localId: string, remoteId: string) => void;
   setVetFrequency: (petId: string, frequency: string) => void;
 
   todayLogs: (petId?: string) => FeedingLog[];
@@ -205,6 +214,107 @@ export const useAppStore = create<AppState>()(
           },
         });
         return entry;
+      },
+
+      updateAppointment: (petId, appointmentId, patch) => {
+        const record = get().pets[petId];
+        if (!record) return;
+        set({
+          pets: {
+            ...get().pets,
+            [petId]: {
+              ...record,
+              vet: { ...record.vet, appointments: record.vet.appointments.map((a) => (a.id === appointmentId ? { ...a, ...patch } : a)) },
+            },
+          },
+        });
+      },
+
+      updateMedication: (petId, medicationId, patch) => {
+        const record = get().pets[petId];
+        if (!record) return;
+        set({
+          pets: {
+            ...get().pets,
+            [petId]: {
+              ...record,
+              vet: { ...record.vet, medications: record.vet.medications.map((m) => (m.id === medicationId ? { ...m, ...patch } : m)) },
+            },
+          },
+        });
+      },
+
+      setVaccinationStatus: (petId, name, done) => {
+        const record = get().pets[petId];
+        if (!record) return;
+        set({
+          pets: {
+            ...get().pets,
+            [petId]: { ...record, pet: { ...record.pet, vaccinations: { ...record.pet.vaccinations, [name]: done } } },
+          },
+        });
+      },
+
+      removeAppointment: (petId, appointmentId) => {
+        const record = get().pets[petId];
+        if (!record) return;
+        set({
+          pets: {
+            ...get().pets,
+            [petId]: {
+              ...record,
+              vet: { ...record.vet, appointments: record.vet.appointments.filter((a) => a.id !== appointmentId) },
+            },
+          },
+        });
+      },
+
+      removeMedication: (petId, medicationId) => {
+        const record = get().pets[petId];
+        if (!record) return;
+        set({
+          pets: {
+            ...get().pets,
+            [petId]: {
+              ...record,
+              vet: { ...record.vet, medications: record.vet.medications.filter((m) => m.id !== medicationId) },
+            },
+          },
+        });
+      },
+
+      syncAppointmentId: (petId, localId, remoteId) => {
+        const record = get().pets[petId];
+        if (!record) return;
+        set({
+          pets: {
+            ...get().pets,
+            [petId]: {
+              ...record,
+              vet: {
+                ...record.vet,
+                appointments: record.vet.appointments.map((a) => (a.id === localId ? { ...a, id: remoteId } : a)),
+              },
+            },
+          },
+        });
+      },
+
+      syncMedicationId: (petId, localId, remoteId) => {
+        const record = get().pets[petId];
+        if (!record) return;
+        set({
+          pets: {
+            ...get().pets,
+            [petId]: {
+              ...record,
+              vet: {
+                ...record.vet,
+                medications: record.vet.medications.map((m) => (m.id === localId ? { ...m, id: remoteId } : m)),
+              },
+            },
+          },
+        });
       },
 
       setVetFrequency: (petId, frequency) => {

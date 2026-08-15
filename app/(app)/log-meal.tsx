@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, TextInput, StyleSheet, Pressable } from "react-native";
 import { router } from "expo-router";
 import { X, Plus, Minus } from "@/components/icons";
 import { Chip } from "@/components/ui/Chip";
@@ -24,7 +24,12 @@ export default function LogMeal() {
   const perMealSuggestion = food?.mealsPerDay ? Math.round(dailyGrams / food.mealsPerDay) : 0;
   const remaining = Math.max(0, dailyGrams - todayTotalForFood);
 
-  const [grams, setGrams] = useState(perMealSuggestion || 0);
+  // Kept as a string, not a number, so the field can be freely typed into
+  // (e.g. "26") without fighting a numeric stepper that only landed on
+  // multiples of 5 — that was the actual bug: 26g out of a 35g meal simply
+  // wasn't reachable before.
+  const [gramsText, setGramsText] = useState(String(perMealSuggestion || 0));
+  const grams = Math.max(0, Math.round(Number(gramsText) || 0));
   const [label, setLabel] = useState(MEAL_LABELS[0]);
   const [saving, setSaving] = useState(false);
 
@@ -32,7 +37,11 @@ export default function LogMeal() {
     setFoodId(id);
     const f = foods.find((x) => x.id === id);
     const suggestion = f?.mealsPerDay ? Math.round((Number(f.dailyGrams) || 0) / f.mealsPerDay) : 0;
-    setGrams(suggestion || 0);
+    setGramsText(String(suggestion || 0));
+  }
+
+  function nudge(delta: number) {
+    setGramsText((prev) => String(Math.max(0, (Math.round(Number(prev) || 0)) + delta)));
   }
 
   async function save() {
@@ -97,20 +106,30 @@ export default function LogMeal() {
       </View>
 
       <View style={styles.stepper}>
-        <Pressable onPress={() => setGrams((g) => Math.max(0, g - 5))}>
+        <Pressable onPress={() => nudge(-5)}>
           <NeoBox depth={2} radius={12} style={styles.stepBtn}>
             <Minus size={16} color={colors.ink} />
           </NeoBox>
         </Pressable>
-        <Text style={styles.gramsText}>{grams}g</Text>
-        <Pressable onPress={() => setGrams((g) => g + 5)}>
+        <View style={styles.gramsInputWrap}>
+          <TextInput
+            value={gramsText}
+            onChangeText={(v) => setGramsText(v.replace(/[^0-9]/g, ""))}
+            keyboardType="number-pad"
+            selectTextOnFocus
+            style={styles.gramsText}
+            maxLength={4}
+          />
+          <Text style={styles.gramsUnit}>g</Text>
+        </View>
+        <Pressable onPress={() => nudge(5)}>
           <NeoBox depth={2} radius={12} style={styles.stepBtn}>
             <Plus size={16} color={colors.ink} />
           </NeoBox>
         </Pressable>
       </View>
       <Text style={styles.hint}>
-        {remaining}g remaining today · suggested {perMealSuggestion}g/meal
+        Tap the number to type an exact amount · {remaining}g remaining today · suggested {perMealSuggestion}g/meal
       </Text>
 
       <PrimaryButton
@@ -127,7 +146,7 @@ export default function LogMeal() {
 }
 
 const styles = StyleSheet.create({
-  sheet: { flex: 1, backgroundColor: colors.appBg, paddingHorizontal: 24, paddingTop: 50, paddingBottom: 28 },
+  sheet: { flex: 1, backgroundColor: colors.appBg, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 28 },
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 18 },
   title: { fontFamily: fonts.display, fontSize: 19, color: colors.ink },
   closeBtn: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 2, borderColor: colors.ink, padding: 6 },
@@ -135,6 +154,11 @@ const styles = StyleSheet.create({
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 18 },
   stepper: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 18, marginBottom: 8 },
   stepBtn: { width: 40, height: 40, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" },
-  gramsText: { fontFamily: fonts.monoSemibold, fontSize: 40, color: colors.ink, minWidth: 110, textAlign: "center" },
+  gramsInputWrap: { flexDirection: "row", alignItems: "baseline", justifyContent: "center", minWidth: 110 },
+  gramsText: {
+    fontFamily: fonts.monoSemibold, fontSize: 40, color: colors.ink, textAlign: "center",
+    minWidth: 70, padding: 0,
+  },
+  gramsUnit: { fontFamily: fonts.monoSemibold, fontSize: 22, color: colors.inkSoft, marginLeft: 2 },
   hint: { textAlign: "center", fontSize: 12, color: colors.inkSoft, marginBottom: 20, fontFamily: fonts.body },
 });

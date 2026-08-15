@@ -22,7 +22,7 @@ export default function PetTypeStep() {
           <ChevronLeft size={20} color={colors.ink} />
         </Pressable>
         <View style={styles.dots}>
-          {Array.from({ length: 8 }).map((_, i) => (
+          {Array.from({ length: 9 }).map((_, i) => (
             <View key={i} style={[styles.dot, i === 1 && styles.dotActive]} />
           ))}
         </View>

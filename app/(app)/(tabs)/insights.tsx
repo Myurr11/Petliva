@@ -22,19 +22,21 @@ function startOfDay(d: Date) {
   return c;
 }
 
-function buildDailyBreakdown(logs: FeedingLog[], days: number) {
+function buildDailyBreakdown(logs: FeedingLog[], days: number, foodCategories: Map<string, "dry" | "wet">) {
   const today = startOfDay(new Date());
-  const buckets: { date: Date; grams: number; meals: number }[] = [];
+  const buckets: { date: Date; grams: number; dryGrams: number; wetGrams: number; meals: number }[] = [];
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
-    buckets.push({ date, grams: 0, meals: 0 });
+    buckets.push({ date, grams: 0, dryGrams: 0, wetGrams: 0, meals: 0 });
   }
   for (const log of logs) {
     const logDate = startOfDay(new Date(log.loggedAt));
     const bucket = buckets.find((b) => b.date.getTime() === logDate.getTime());
     if (bucket) {
       bucket.grams += log.grams;
+      if (foodCategories.get(log.foodId) === "dry") bucket.dryGrams += log.grams;
+      if (foodCategories.get(log.foodId) === "wet") bucket.wetGrams += log.grams;
       bucket.meals += 1;
     }
   }
@@ -47,7 +49,7 @@ export default function Insights() {
 
   const buckets = useMemo(() => {
     if (!record) return [];
-    return buildDailyBreakdown(record.logs, DAYS_TO_SHOW);
+    return buildDailyBreakdown(record.logs, DAYS_TO_SHOW, new Map(record.foods.map((food) => [food.id, food.category])));
   }, [record]);
 
   if (!record) {
@@ -80,17 +82,23 @@ export default function Insights() {
     .filter((l) => isSameDate(new Date(l.loggedAt), selectedDate))
     .sort((a, b) => +new Date(a.loggedAt) - +new Date(b.loggedAt));
   const dayTotal = dayLogs.reduce((sum, l) => sum + l.grams, 0);
+  const dryDailyGrams = record.foods.filter((f) => f.category === "dry").reduce((sum, f) => sum + (Number(f.dailyGrams) || 0), 0);
+  const wetDailyGrams = record.foods.filter((f) => f.category === "wet").reduce((sum, f) => sum + (Number(f.dailyGrams) || 0), 0);
+  const dryDayTotal = dayLogs.filter((log) => foodFor(log.foodId)?.category === "dry").reduce((sum, log) => sum + log.grams, 0);
+  const wetDayTotal = dayLogs.filter((log) => foodFor(log.foodId)?.category === "wet").reduce((sum, log) => sum + log.grams, 0);
   const dayAppointment = record.vet.appointments.find((a) => a.date === selectedIso);
   const dayMedications = record.vet.medications
     .map((m) => ({ m, status: getMedicationStatus(m, selectedDate) }))
     .filter(({ status }) => status.state === "active");
 
-  const ringPct = dailyGrams ? Math.min(100, Math.round((dayTotal / dailyGrams) * 100)) : 0;
-  const remainingGrams = Math.max(0, dailyGrams - dayTotal);
-
   function foodFor(foodId: string) {
     return record!.foods.find((f) => f.id === foodId);
   }
+
+  const feedingTimes = (category: "dry" | "wet") => dayLogs
+    .filter((log) => foodFor(log.foodId)?.category === category)
+    .map((log) => new Date(log.loggedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }))
+    .join(", ") || "—";
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
@@ -136,27 +144,22 @@ export default function Insights() {
 
             {/* Bars */}
             {buckets.map((b, i) => {
-              const h = chartMax ? (b.grams / chartMax) * chartH : 0;
+              const dryH = chartMax ? (b.dryGrams / chartMax) * chartH : 0;
+              const wetH = chartMax ? (b.wetGrams / chartMax) * chartH : 0;
               const x = i * (barW + barGap);
               const barCenter = x + barW / 2;
-              const y = topPadding + chartH - h;
+              const wetY = topPadding + chartH - wetH;
+              const dryY = wetY - dryH;
               const isSelected = isSameDate(b.date, selectedDate);
               const hasData = b.grams > 0;
 
               return (
                 <React.Fragment key={i}>
                   {hasData ? (
-                    <Rect
-                      x={x}
-                      y={y}
-                      width={barW}
-                      height={Math.max(h, 6)}
-                      rx={6}
-                      fill={colors.accent}
-                      stroke={isSelected ? colors.accentDeep : colors.ink}
-                      strokeWidth={isSelected ? 3 : 1.5}
-                      onPress={() => setSelectedDate(b.date)}
-                    />
+                    <>
+                      {b.wetGrams > 0 && <Rect x={x} y={wetY} width={barW} height={Math.max(wetH, 4)} rx={b.dryGrams ? 0 : 6} fill={colors.sage} stroke={colors.ink} strokeWidth={1.5} onPress={() => setSelectedDate(b.date)} />}
+                      {b.dryGrams > 0 && <Rect x={x} y={dryY} width={barW} height={Math.max(dryH, 4)} rx={6} fill={colors.accent} stroke={isSelected ? colors.accentDeep : colors.ink} strokeWidth={isSelected ? 3 : 1.5} onPress={() => setSelectedDate(b.date)} />}
+                    </>
                   ) : (
                     /* Clean baseline indicator for 0g days without bulky black capsule */
                     <Rect
@@ -176,7 +179,7 @@ export default function Insights() {
                   {(hasData || isSelected) && (
                     <SvgText
                       x={barCenter}
-                      y={hasData ? y - 6 : topPadding + chartH - 10}
+                      y={hasData ? dryY - 6 : topPadding + chartH - 10}
                       textAnchor="middle"
                       fontSize={11}
                       fontFamily={fonts.monoSemibold}
@@ -214,13 +217,22 @@ export default function Insights() {
           <View style={styles.legendRow}>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: colors.accent }]} />
-              <Text style={styles.legendText}>Fed</Text>
+              <Text style={styles.legendText}>Dry</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: colors.sage }]} />
+              <Text style={styles.legendText}>Wet</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendLine, { borderColor: colors.accentDeep }]} />
               <Text style={styles.legendText}>Daily Target</Text>
             </View>
             <Text style={styles.legendHint}>Tap any bar to view date</Text>
+          </View>
+          <View style={styles.feedingTimesRow}>
+            <Text style={styles.feedingTimesLabel}>FED AT</Text>
+            <Text style={styles.feedingTimesText}>Dry: {feedingTimes("dry")}</Text>
+            <Text style={styles.feedingTimesText}>Wet: {feedingTimes("wet")}</Text>
           </View>
         </NeoBox>
 
@@ -236,7 +248,13 @@ export default function Insights() {
             PROGRESS · {selectedDate.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }).toUpperCase()}
           </Text>
           <View style={styles.ringWrap}>
-            <Ring pct={ringPct} />
+            <Ring
+              pct={0}
+              segments={[
+                { pct: dailyGrams ? (Math.min(dryDayTotal, dryDailyGrams) / dailyGrams) * 100 : 0, color: colors.accent },
+                { pct: dailyGrams ? (Math.min(wetDayTotal, wetDailyGrams) / dailyGrams) * 100 : 0, color: colors.sage },
+              ]}
+            />
             <View style={styles.ringCenter}>
               <Text style={styles.ringTotal}>{dayTotal}g</Text>
               <Text style={styles.ringTarget}>of {dailyGrams || "—"}g</Text>
@@ -244,16 +262,16 @@ export default function Insights() {
           </View>
           <View style={styles.ringStatsRow}>
             <View style={{ alignItems: "center" }}>
-              <Text style={[styles.ringStatValue, { color: colors.sage }]}>{remainingGrams}g</Text>
-              <Text style={styles.ringStatLabel}>remaining</Text>
+              <Text style={[styles.ringStatValue, { color: colors.accentDeep }]}>{dryDayTotal}g</Text>
+              <Text style={styles.ringStatLabel}>dry of {dryDailyGrams}g</Text>
+            </View>
+            <View style={{ alignItems: "center" }}>
+              <Text style={[styles.ringStatValue, { color: colors.sage }]}>{wetDayTotal}g</Text>
+              <Text style={styles.ringStatLabel}>wet of {wetDailyGrams}g</Text>
             </View>
             <View style={{ alignItems: "center" }}>
               <Text style={styles.ringStatValue}>{dayLogs.length}/{totalMealsPerDay}</Text>
               <Text style={styles.ringStatLabel}>meals logged</Text>
-            </View>
-            <View style={{ alignItems: "center" }}>
-              <Text style={styles.ringStatValue}>{record.foods.length}</Text>
-              <Text style={styles.ringStatLabel}>{record.foods.length === 1 ? "food" : "foods"}</Text>
             </View>
           </View>
 
@@ -411,6 +429,9 @@ const styles = StyleSheet.create({
   legendLine: { width: 14, height: 0, borderBottomWidth: 2, borderStyle: "dashed" },
   legendText: { fontFamily: fonts.body, fontSize: 11, color: colors.inkSoft },
   legendHint: { marginLeft: "auto", fontFamily: fonts.bodyMedium, fontSize: 10.5, color: colors.accentDeep },
+  feedingTimesRow: { width: "100%", marginTop: 10, paddingTop: 10, borderTopWidth: 1.5, borderTopColor: colors.track, gap: 3 },
+  feedingTimesLabel: { fontFamily: fonts.labelBold, fontSize: 10, color: colors.inkSoft, letterSpacing: 0.5 },
+  feedingTimesText: { fontFamily: fonts.mono, fontSize: 10.5, color: colors.ink },
   sectionLabel: { fontFamily: fonts.labelBold, fontSize: 12.5, color: colors.ink, letterSpacing: 0.5, marginBottom: 10, marginTop: 6 },
   calendarCard: { padding: 16, marginBottom: 18 },
   ringCard: { paddingVertical: 20, paddingHorizontal: 18, alignItems: "center", marginBottom: 20 },

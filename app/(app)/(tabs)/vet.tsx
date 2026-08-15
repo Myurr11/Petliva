@@ -1,14 +1,15 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Syringe, Check, Calendar, Pill, Plus, Dog, Cat, CalendarPlus } from "@/components/icons";
+import { Syringe, Check, Calendar, Pill, Plus, Dog, Cat, CalendarPlus, MoreVertical } from "@/components/icons";
 import { PetSwitcherHeader } from "@/components/ui/PetSwitcherHeader";
 import { NeoBox } from "@/components/ui/NeoBox";
 import { useAppStore } from "@/store/useAppStore";
 import { CORE_VACCINES_CAT, CORE_VACCINES_DOG } from "@/constants/data";
 import { colors, fonts } from "@/theme/tokens";
 import { getMedicationStatus } from "@/lib/medicationStatus";
+import { deleteAppointment, deleteMedication, updateVaccinations } from "@/lib/supabase";
 
 function isPast(dateStr: string) {
   const d = new Date(dateStr);
@@ -20,6 +21,9 @@ function isPast(dateStr: string) {
 export default function Vet() {
   const record = useAppStore((s) => (s.activePetId ? s.pets[s.activePetId] : undefined));
   const activePetId = useAppStore((s) => s.activePetId);
+  const removeAppointment = useAppStore((s) => s.removeAppointment);
+  const removeMedication = useAppStore((s) => s.removeMedication);
+  const setVaccinationStatus = useAppStore((s) => s.setVaccinationStatus);
 
   if (!record || !activePetId) {
     return (
@@ -41,12 +45,77 @@ export default function Vet() {
     .filter((a) => a.completed || isPast(a.date))
     .sort((a, b) => +new Date(b.date) - +new Date(a.date));
 
+  function confirmDeleteAppointment(id: string, label: string) {
+    Alert.alert("Delete appointment?", label, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          removeAppointment(activePetId!, id);
+          try {
+            await deleteAppointment(id);
+          } catch {
+            // local removal already happened; remote delete is best-effort
+            // (older entries added before ID-sync may not exist remotely
+            // under this id, in which case there's nothing to delete anyway)
+          }
+        },
+      },
+    ]);
+  }
+
+  function confirmDeleteMedication(id: string, label: string) {
+    Alert.alert("Delete medication?", label, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          removeMedication(activePetId!, id);
+          try {
+            await deleteMedication(id);
+          } catch {
+            // same best-effort note as above
+          }
+        },
+      },
+    ]);
+  }
+
+  function showAppointmentMenu(id: string, label: string) {
+    Alert.alert("Appointment", label, [
+      { text: "Edit", onPress: () => router.push({ pathname: "/(app)/add-appointment", params: { appointmentId: id } }) },
+      { text: "Delete", style: "destructive", onPress: () => confirmDeleteAppointment(id, label) },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  }
+
+  function showMedicationMenu(id: string, label: string) {
+    Alert.alert("Medication", label, [
+      { text: "Edit", onPress: () => router.push({ pathname: "/(app)/add-medication", params: { medicationId: id } }) },
+      { text: "Delete", style: "destructive", onPress: () => confirmDeleteMedication(id, label) },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  }
+
+  async function toggleVaccination(name: string, done: boolean) {
+    const vaccinations = { ...record!.pet.vaccinations, [name]: !done };
+    setVaccinationStatus(activePetId!, name, !done);
+    try {
+      await updateVaccinations(activePetId!, vaccinations);
+    } catch {
+      // The local update remains available while offline.
+    }
+  }
+
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content}>
         <PetSwitcherHeader />
+        <Text style={styles.title}>Vet care</Text>
+        <Text style={styles.sub}>{record.pet.name}</Text>
 
-        {/* Pet card */}
         <NeoBox depth={4} radius={20} style={styles.petCard}>
           <View style={styles.petCardHeader}>
             <View style={styles.petAvatar}>
@@ -66,80 +135,84 @@ export default function Vet() {
           </View>
         </NeoBox>
 
-        {/* Upcoming appointments */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionLabel}>UPCOMING APPOINTMENTS</Text>
+          <Text style={styles.sectionLabel}>APPOINTMENTS</Text>
           <Pressable onPress={() => router.push("/(app)/add-appointment")} style={styles.addLink}>
             <Plus size={13} color={colors.accentDeep} />
             <Text style={styles.addLinkText}>Add</Text>
           </Pressable>
         </View>
 
-        {upcoming.length === 0 ? (
+        {upcoming.length === 0 && past.length === 0 ? (
           <Pressable onPress={() => router.push("/(app)/add-appointment")}>
             <View style={styles.noApptCard}>
               <View style={styles.noApptIconWrap}>
                 <CalendarPlus size={22} color={colors.inkSoft} />
               </View>
-              <Text style={styles.noApptTitle}>Nothing scheduled</Text>
+              <Text style={styles.noApptTitle}>No appointments</Text>
               <Text style={styles.noApptSub}>Tap to add {record.pet.name}'s next vet visit</Text>
             </View>
           </Pressable>
         ) : (
-          <View style={{ gap: 10, marginBottom: 20 }}>
-            {upcoming.map((a) => (
-              <NeoBox key={a.id} depth={3} radius={14} style={{ backgroundColor: colors.accent }}>
-                <View style={styles.apptRowInner}>
-                  <View style={styles.apptIconWrap}>
-                    <Calendar size={16} color={colors.ink} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.apptDate}>
-                      {new Date(a.date).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}
-                      {a.time ? ` at ${a.time}` : ""}
-                    </Text>
-                    {(a.doctorName || a.hospitalName) && (
-                      <Text style={styles.apptVetMeta}>
-                        {[a.doctorName, a.hospitalName].filter(Boolean).join(" · ")}
-                      </Text>
-                    )}
-                    {!!a.phoneNo && <Text style={styles.apptPhone}>📞 {a.phoneNo}</Text>}
-                    {!!a.note && <Text style={styles.apptNote}>{a.note}</Text>}
-                  </View>
-                  <View style={styles.upcomingBadge}>
-                    <Text style={styles.upcomingBadgeText}>Upcoming</Text>
-                  </View>
-                </View>
-              </NeoBox>
-            ))}
-          </View>
-        )}
-
-        {past.length > 0 && (
           <>
-            <Text style={[styles.sectionLabel, { marginTop: 10 }]}>PAST APPOINTMENTS</Text>
-            <View style={{ gap: 10, marginBottom: 20 }}>
-              {past.map((a) => (
-                <View key={a.id} style={styles.apptRow}>
-                  <View style={styles.apptIconWrap}>
-                    <Calendar size={16} color={colors.inkSoft} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.apptDate}>
-                      {new Date(a.date).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}
-                      {a.time ? ` at ${a.time}` : ""}
-                    </Text>
-                    {(a.doctorName || a.hospitalName) && (
-                      <Text style={styles.apptVetMeta}>
-                        {[a.doctorName, a.hospitalName].filter(Boolean).join(" · ")}
+            {upcoming.length > 0 && (
+              <View style={{ gap: 10, marginBottom: 14 }}>
+                {upcoming.map((a) => (
+                  <NeoBox key={a.id} depth={3} radius={14} style={{ backgroundColor: colors.accent }}>
+                    <View style={styles.apptRowInner}>
+                      <View style={styles.apptIconWrap}>
+                        <Calendar size={16} color={colors.ink} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.apptDate}>
+                          {new Date(a.date).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
+                          {a.time ? ` at ${a.time}` : ""}
+                        </Text>
+                        {!!(a.doctorName || a.hospitalName) && (
+                          <Text style={styles.apptNote}>{[a.doctorName, a.hospitalName].filter(Boolean).join(" · ")}</Text>
+                        )}
+                        {!!a.note && <Text style={styles.apptNote}>{a.note}</Text>}
+                      </View>
+                      <Pressable
+                        onPress={() => showAppointmentMenu(a.id, new Date(a.date).toLocaleDateString())}
+                        style={styles.menuBtn}
+                        hitSlop={8}
+                      >
+                        <MoreVertical size={19} color={colors.ink} />
+                      </Pressable>
+                    </View>
+                  </NeoBox>
+                ))}
+              </View>
+            )}
+
+            {past.length > 0 && (
+              <View style={{ gap: 10, marginBottom: 20 }}>
+                {past.map((a) => (
+                  <View key={a.id} style={styles.apptRow}>
+                    <View style={styles.apptIconWrap}>
+                      <Calendar size={16} color={colors.inkSoft} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.apptDate}>
+                        {new Date(a.date).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}
                       </Text>
-                    )}
-                    {!!a.phoneNo && <Text style={styles.apptPhone}>📞 {a.phoneNo}</Text>}
-                    {!!a.note && <Text style={styles.apptNote}>{a.note}</Text>}
+                      {!!(a.doctorName || a.hospitalName) && (
+                        <Text style={styles.apptNote}>{[a.doctorName, a.hospitalName].filter(Boolean).join(" · ")}</Text>
+                      )}
+                      {!!a.note && <Text style={styles.apptNote}>{a.note}</Text>}
+                    </View>
+                    <Pressable
+                      onPress={() => showAppointmentMenu(a.id, new Date(a.date).toLocaleDateString())}
+                      style={styles.menuBtn}
+                      hitSlop={8}
+                    >
+                      <MoreVertical size={19} color={colors.inkSoft} />
+                    </Pressable>
                   </View>
-                </View>
-              ))}
-            </View>
+                ))}
+              </View>
+            )}
           </>
         )}
 
@@ -150,7 +223,6 @@ export default function Vet() {
             <Text style={styles.addLinkText}>Add</Text>
           </Pressable>
         </View>
-
         {record.vet.medications.length === 0 ? (
           <Pressable onPress={() => router.push("/(app)/add-medication")}>
             <View style={styles.noApptCard}>
@@ -197,6 +269,9 @@ export default function Vet() {
                       {status.state === "active" ? `Day ${status.dayOfCourse}` : status.state === "upcoming" ? "Upcoming" : "Done"}
                     </Text>
                   </View>
+                  <Pressable onPress={() => showMedicationMenu(m.id, m.name)} style={styles.menuBtn} hitSlop={8}>
+                    <MoreVertical size={19} color={colors.inkSoft} />
+                  </Pressable>
                 </View>
               ))}
           </View>
@@ -207,7 +282,7 @@ export default function Vet() {
           {core.map((v) => {
             const done = !!record.pet.vaccinations[v];
             return (
-              <View key={v} style={styles.vaccineRow}>
+              <Pressable key={v} onPress={() => toggleVaccination(v, done)} style={styles.vaccineRow}>
                 <View style={styles.vaccineLeft}>
                   <Syringe size={14} color={colors.ink} />
                   <Text style={styles.vaccineLabel}>{v}</Text>
@@ -218,10 +293,10 @@ export default function Vet() {
                     {done ? "Done" : "Not done"}
                   </Text>
                 </View>
-              </View>
+              </Pressable>
             );
           })}
-          <Text style={styles.vaccineHint}>Set from onboarding — update via the Profile tab if this changes.</Text>
+          <Text style={styles.vaccineHint}>Tap a vaccine to update its status.</Text>
         </NeoBox>
       </ScrollView>
     </SafeAreaView>
@@ -239,12 +314,9 @@ function PetStat({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.appBg },
-  content: { paddingHorizontal: 20, paddingBottom: 100, paddingTop: 8 },
-  sectionLabel: { fontFamily: fonts.labelBold, fontSize: 12.5, color: colors.ink, letterSpacing: 0.5, marginBottom: 10 },
-  sectionHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 },
-  addLink: { flexDirection: "row", alignItems: "center", gap: 3, marginBottom: 10 },
-  addLinkText: { fontFamily: fonts.bodySemibold, fontSize: 12.5, color: colors.accentDeep },
-
+  content: { paddingHorizontal: 20, paddingBottom: 132, paddingTop: 8 },
+  title: { fontFamily: fonts.display, fontSize: 22, color: colors.ink, marginBottom: 2 },
+  sub: { fontFamily: fonts.body, fontSize: 13, color: colors.inkSoft, marginBottom: 20 },
   petCard: { padding: 18, marginBottom: 24 },
   petCardHeader: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 },
   petAvatar: {
@@ -257,9 +329,12 @@ const styles = StyleSheet.create({
   statDivider: { width: 2, height: 32, backgroundColor: colors.ink, opacity: 0.15 },
   petStatValue: { fontFamily: fonts.monoSemibold, fontSize: 15, color: colors.ink },
   petStatLabel: { fontFamily: fonts.body, fontSize: 10.5, color: colors.inkSoft, marginTop: 3 },
-
+  sectionLabel: { fontFamily: fonts.labelBold, fontSize: 12.5, color: colors.ink, letterSpacing: 0.5, marginBottom: 10 },
+  sectionHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 20 },
+  addLink: { flexDirection: "row", alignItems: "center", gap: 3, marginBottom: 10 },
+  addLinkText: { fontFamily: fonts.bodySemibold, fontSize: 12.5, color: colors.accentDeep },
   noApptCard: {
-    alignItems: "center", justifyContent: "center", paddingVertical: 24, paddingHorizontal: 16, borderRadius: 16,
+    alignItems: "center", justifyContent: "center", paddingVertical: 28, borderRadius: 16,
     borderWidth: 2, borderColor: colors.ink, borderStyle: "dashed", backgroundColor: colors.surfaceAlt, marginBottom: 20,
   },
   noApptIconWrap: {
@@ -267,8 +342,7 @@ const styles = StyleSheet.create({
     borderWidth: 2, borderColor: colors.ink, alignItems: "center", justifyContent: "center", marginBottom: 10,
   },
   noApptTitle: { fontFamily: fonts.bodySemibold, fontSize: 14.5, color: colors.ink },
-  noApptSub: { fontFamily: fonts.body, fontSize: 12, color: colors.inkSoft, marginTop: 3, textAlign: "center" },
-
+  noApptSub: { fontFamily: fonts.body, fontSize: 12, color: colors.inkSoft, marginTop: 3 },
   emptyText: { color: colors.inkSoft, fontSize: 13, textAlign: "center", fontFamily: fonts.body },
   apptRowInner: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 14 },
   apptRow: {
@@ -276,19 +350,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface, borderWidth: 2, borderColor: colors.ink,
   },
   medRow: {
-    flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: 14,
+    flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: 14,
     backgroundColor: colors.surface, borderWidth: 2, borderColor: colors.ink,
   },
-  apptIconWrap: { width: 34, height: 34, borderRadius: 10, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.ink, alignItems: "center", justifyContent: "center" },
+  apptIconWrap: { width: 34, height: 34, borderRadius: 10, backgroundColor: colors.surfaceAlt, alignItems: "center", justifyContent: "center" },
   apptDate: { fontFamily: fonts.bodySemibold, fontSize: 13.5, color: colors.ink },
-  apptVetMeta: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: colors.ink, marginTop: 2 },
-  apptPhone: { fontFamily: fonts.mono, fontSize: 11, color: colors.accentDeep, marginTop: 1 },
   apptNote: { fontFamily: fonts.body, fontSize: 11.5, color: colors.inkSoft, marginTop: 2 },
   medDateRange: { fontFamily: fonts.mono, fontSize: 10.5, color: colors.inkSoft, marginTop: 3 },
   medStatusBadge: { borderRadius: 999, borderWidth: 1.5, borderColor: colors.ink, paddingVertical: 4, paddingHorizontal: 9 },
   medStatusText: { fontFamily: fonts.labelBold, fontSize: 10.5, color: colors.ink },
-  upcomingBadge: { backgroundColor: colors.ink, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10 },
-  upcomingBadgeText: { fontFamily: fonts.bodySemibold, fontSize: 10.5, color: colors.onInk },
+  menuBtn: { padding: 4, marginRight: -4 },
   vaccineCard: { padding: 16 },
   vaccineRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8 },
   vaccineLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
