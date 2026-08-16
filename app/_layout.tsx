@@ -20,13 +20,16 @@ import {
   BeVietnamPro_700Bold,
 } from "@expo-google-fonts/be-vietnam-pro";
 import { colors } from "@/theme/tokens";
-import { supabase } from "@/lib/supabase";
+import { supabase, fetchUserPetRecords } from "@/lib/supabase";
 import { useAppStore } from "@/store/useAppStore";
+import type { Session } from "@supabase/supabase-js";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const setAuthed = useAppStore((s) => s.setAuthed);
+  const setHydrating = useAppStore((s) => s.setHydrating);
+  const hydrateFromServer = useAppStore((s) => s.hydrateFromServer);
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -51,14 +54,38 @@ export default function RootLayout() {
   // Supabase session — e.g. signing up while "Confirm email" is on leaves
   // no active session until the confirmation link is clicked. Always trust
   // the live session as truth, in both directions.
+  //
+  // The local `pets` cache can drift too — most notably, sign-out wipes it
+  // on purpose (see profile.tsx). So whenever a session is present, we
+  // re-fetch the user's pets from Supabase and rebuild local state from
+  // that, rather than trusting whatever AsyncStorage still has lying
+  // around. This is what lets someone sign back into an account that has
+  // already completed onboarding without being sent through it again.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setAuthed(!!data.session);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    let cancelled = false;
+
+    async function syncSession(session: Session | null) {
       setAuthed(!!session);
+      if (!session) return;
+      setHydrating(true);
+      try {
+        const pets = await fetchUserPetRecords();
+        if (!cancelled) hydrateFromServer(pets);
+      } catch (e) {
+        console.warn("Failed to load pets from Supabase:", e);
+      } finally {
+        if (!cancelled) setHydrating(false);
+      }
+    }
+
+    supabase.auth.getSession().then(({ data }) => syncSession(data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      syncSession(session);
     });
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   if (!fontsLoaded) return null;

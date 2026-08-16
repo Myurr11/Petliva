@@ -17,6 +17,11 @@ function todayISO() {
 interface AppState {
   isAuthed: boolean;
   hasOnboarded: boolean;
+  /** True while pets are being fetched from Supabase after sign-in / app
+   *  launch. Screens that gate on `hasOnboarded` should wait for this to
+   *  go false first, so we don't route someone into onboarding just
+   *  because the fetch hasn't finished yet. */
+  isHydrating: boolean;
   user: UserProfile;
 
   // Scratch draft used by the onboarding wizard — also reused when adding a
@@ -29,6 +34,11 @@ interface AppState {
   activePetId: string | null;
 
   setAuthed: (v: boolean) => void;
+  setHydrating: (v: boolean) => void;
+  /** Replaces `pets` with what's actually on the server (called after
+   *  sign-in / session restore) and derives `hasOnboarded`/`activePetId`
+   *  from it, rather than trusting whatever was last cached locally. */
+  hydrateFromServer: (pets: Record<string, PetRecord>) => void;
   setUser: (u: Partial<UserProfile>) => void;
   setPet: (p: Partial<Pet>) => void;
   setVetDraft: (v: Partial<VetInfo>) => void;
@@ -137,6 +147,7 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       isAuthed: false,
       hasOnboarded: false,
+      isHydrating: false,
       user: { name: "", email: "" },
       pet: emptyPet,
       foodsDraft: defaultFoodsDraft(),
@@ -145,6 +156,16 @@ export const useAppStore = create<AppState>()(
       activePetId: null,
 
       setAuthed: (v) => set({ isAuthed: v }),
+      setHydrating: (v) => set({ isHydrating: v }),
+      hydrateFromServer: (pets) => {
+        const ids = Object.keys(pets);
+        const currentActive = get().activePetId;
+        set({
+          pets,
+          hasOnboarded: ids.length > 0,
+          activePetId: currentActive && pets[currentActive] ? currentActive : (ids[0] ?? null),
+        });
+      },
       setUser: (u) => set({ user: { ...get().user, ...u } }),
       setPet: (p) => set({ pet: { ...get().pet, ...p } }),
       setVetDraft: (v) => set({ vetDraft: { ...get().vetDraft, ...v } }),
@@ -443,6 +464,13 @@ export const useAppStore = create<AppState>()(
       name: "bowlkeeper-storage",
       storage: createJSONStorage(() => AsyncStorage),
       version: 5,
+      // isHydrating is a transient runtime flag, not real state — never
+      // persist it, or an app crash mid-fetch could leave it stuck `true`
+      // forever and block every future launch.
+      partialize: (state) => {
+        const { isHydrating, ...rest } = state;
+        return rest;
+      },
       migrate: (persisted: any, fromVersion) => {
         let state = persisted;
 

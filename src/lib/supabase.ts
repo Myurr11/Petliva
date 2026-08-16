@@ -1,7 +1,7 @@
 import "react-native-url-polyfill/auto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
-import type { Pet, FoodItem, FeedingLog, StockEntry, VetInfo, VetAppointment, Medication } from "@/types";
+import type { Pet, PetType, FoodItem, FeedingLog, StockEntry, VetInfo, VetAppointment, Medication, PetRecord } from "@/types";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL as string;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY as string;
@@ -24,6 +24,123 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // See supabase/schema.sql for the table definitions + RLS policies these
 // helpers assume (pets, foods, feeding_logs, food_stock, vet_appointments,
 // medications).
+
+/**
+ * Loads every pet (+ foods, logs, restocks, appointments, medications)
+ * belonging to the current session's user, and rebuilds them into the same
+ * `Record<string, PetRecord>` shape the local store keeps in AsyncStorage.
+ *
+ * This is the source of truth on sign-in / app-launch: the local cache can
+ * be empty (fresh install, or wiped on a previous sign-out) but the account
+ * may still have data sitting in Supabase, and this is what brings it back.
+ */
+export async function fetchUserPetRecords(): Promise<Record<string, PetRecord>> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return {};
+
+  const { data: petRows, error: petsErr } = await supabase
+    .from("pets")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: true });
+  if (petsErr) throw petsErr;
+  if (!petRows || petRows.length === 0) return {};
+
+  const petIds = petRows.map((p) => p.id);
+
+  const [foodsRes, logsRes, stockRes, apptRes, medRes] = await Promise.all([
+    supabase.from("foods").select("*").in("pet_id", petIds),
+    supabase.from("feeding_logs").select("*").in("pet_id", petIds).order("logged_at", { ascending: false }),
+    supabase.from("food_stock").select("*").in("pet_id", petIds).order("added_at", { ascending: false }),
+    supabase.from("vet_appointments").select("*").in("pet_id", petIds).order("created_at", { ascending: false }),
+    supabase.from("medications").select("*").in("pet_id", petIds).order("created_at", { ascending: false }),
+  ]);
+  if (foodsRes.error) throw foodsRes.error;
+  if (logsRes.error) throw logsRes.error;
+  if (stockRes.error) throw stockRes.error;
+  if (apptRes.error) throw apptRes.error;
+  if (medRes.error) throw medRes.error;
+
+  const pets: Record<string, PetRecord> = {};
+  for (const p of petRows) {
+    pets[p.id] = {
+      id: p.id,
+      pet: {
+        name: p.name ?? "",
+        type: (p.type ?? "") as PetType | "",
+        breed: p.breed ?? "",
+        weightKg: p.weight_kg != null ? String(p.weight_kg) : "",
+        ageYears: p.age_years != null ? String(p.age_years) : "",
+        vaccinations: p.vaccinations ?? {},
+        medicalTags: p.medical_tags ?? [],
+        medicalNotes: p.medical_notes ?? "",
+      },
+      foods: [],
+      logs: [],
+      restocks: [],
+      vet: { visitFrequency: p.vet_visit_frequency ?? "", appointments: [], medications: [] },
+    };
+  }
+
+  for (const f of foodsRes.data ?? []) {
+    const rec = pets[f.pet_id];
+    if (!rec) continue;
+    rec.foods.push({
+      id: f.id,
+      category: f.category,
+      foodName: f.food_name ?? "",
+      dailyGrams: f.daily_grams != null ? String(f.daily_grams) : "",
+      mealsPerDay: f.meals_per_day ?? 1,
+    });
+  }
+
+  for (const l of logsRes.data ?? []) {
+    const rec = pets[l.pet_id];
+    if (!rec) continue;
+    rec.logs.push({ id: l.id, foodId: l.food_id, grams: Number(l.grams), label: l.label ?? "", loggedAt: l.logged_at });
+  }
+
+  for (const s of stockRes.data ?? []) {
+    const rec = pets[s.pet_id];
+    if (!rec) continue;
+    rec.restocks.push({ id: s.id, foodId: s.food_id, grams: Number(s.grams), note: s.note ?? "", addedAt: s.added_at });
+  }
+
+  for (const a of apptRes.data ?? []) {
+    const rec = pets[a.pet_id];
+    if (!rec) continue;
+    rec.vet.appointments.push({
+      id: a.id,
+      date: a.date,
+      time: a.time ?? undefined,
+      hospitalName: a.hospital_name ?? undefined,
+      doctorName: a.doctor_name ?? undefined,
+      phoneNo: a.phone_no ?? undefined,
+      note: a.note ?? "",
+      completed: !!a.completed,
+      diagnosis: a.diagnosis ?? undefined,
+      diagnosticNotes: a.diagnostic_notes ?? undefined,
+    });
+  }
+
+  for (const m of medRes.data ?? []) {
+    const rec = pets[m.pet_id];
+    if (!rec) continue;
+    rec.vet.medications.push({
+      id: m.id,
+      name: m.name,
+      dosage: m.dosage ?? "",
+      schedule: m.schedule ?? "",
+      startDate: m.start_date ?? "",
+      durationDays: m.duration_days ?? 0,
+      appointmentId: m.appointment_id ?? undefined,
+    });
+  }
+
+  return pets;
+}
 
 /**
  * Creates the pet row, one row in `foods` per FoodItem, and any vet

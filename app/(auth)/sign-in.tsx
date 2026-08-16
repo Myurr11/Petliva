@@ -10,7 +10,7 @@ import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { NeoBox } from "@/components/ui/NeoBox";
 import { colors, fonts } from "@/theme/tokens";
 import { useAppStore } from "@/store/useAppStore";
-import { supabase } from "@/lib/supabase";
+import { supabase, fetchUserPetRecords } from "@/lib/supabase";
 
 const WELCOME_BACK_ILLUSTRATION = require("../../assets/illustrations/welcome-back.png");
 const LETS_GET_STARTED_ILLUSTRATION = require("../../assets/illustrations/lets-get-started.png");
@@ -24,11 +24,31 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false);
   const setUser = useAppStore((s) => s.setUser);
   const setAuthed = useAppStore((s) => s.setAuthed);
+  const setHydrating = useAppStore((s) => s.setHydrating);
+  const hydrateFromServer = useAppStore((s) => s.hydrateFromServer);
   const hasOnboarded = useAppStore((s) => s.hasOnboarded);
 
-  function afterAuth() {
+  // Pulls this account's actual pets from Supabase before deciding where to
+  // route. Without this, a fresh sign-in after a sign-out (which wipes the
+  // local cache) would fall back to the stale local `hasOnboarded` flag and
+  // send an existing user through onboarding again even though their pets
+  // are still safely stored server-side.
+  async function afterAuth() {
     setAuthed(true);
-    router.replace(hasOnboarded ? "/(app)/(tabs)/home" : "/(onboarding)/profile");
+    setHydrating(true);
+    try {
+      const pets = await fetchUserPetRecords();
+      hydrateFromServer(pets);
+      router.replace(Object.keys(pets).length > 0 ? "/(app)/(tabs)/home" : "/(onboarding)/profile");
+    } catch (e: any) {
+      Alert.alert(
+        "Signed in, but couldn't load your data",
+        "Check your connection and pull to refresh once you're in."
+      );
+      router.replace(hasOnboarded ? "/(app)/(tabs)/home" : "/(onboarding)/profile");
+    } finally {
+      setHydrating(false);
+    }
   }
 
   async function handleEmailContinue() {
@@ -51,7 +71,7 @@ export default function SignIn() {
         if (error) throw error;
       }
       setUser({ email });
-      afterAuth();
+      await afterAuth();
     } catch (e: any) {
       Alert.alert("Couldn't sign in", e.message ?? "Something went wrong");
     } finally {
@@ -73,7 +93,7 @@ export default function SignIn() {
       if (result.type === "success" && result.url) {
         const { error: exErr } = await supabase.auth.exchangeCodeForSession(result.url);
         if (exErr) throw exErr;
-        afterAuth();
+        await afterAuth();
       }
     } catch (e: any) {
       Alert.alert("Google sign-in failed", e.message ?? "Something went wrong");
@@ -92,8 +112,6 @@ export default function SignIn() {
             style={styles.heroIllustration}
             resizeMode="contain"
           />
-          <Text style={styles.appName}>Bowlkeeper</Text>
-          <Text style={styles.tagline}>Feed on schedule. Track every gram.</Text>
         </View>
 
         <View style={styles.form}>
@@ -144,7 +162,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.appBg },
   container: { flex: 1, paddingHorizontal: 24, justifyContent: "center" },
   hero: { alignItems: "center", marginBottom: 32 },
-  heroIllustration: { width: 168, height: 148, marginBottom: 6 },
+  heroIllustration: { width: 220, height: 200, marginBottom: 0 },
   appName: { fontFamily: fonts.display, fontSize: 28, color: colors.ink },
   tagline: { fontFamily: fonts.body, fontSize: 14, color: colors.inkSoft, marginTop: 8 },
   form: { width: "100%" },
