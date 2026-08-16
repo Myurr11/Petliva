@@ -325,7 +325,7 @@ function PetStat({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.appBg },
-  content: { paddingHorizontal: 20, paddingBottom: 132, paddingTop: 8 },
+  content: { paddingHorizontal: 20, paddingBottom: 122, paddingTop: 8 },
   title: { fontFamily: fonts.display, fontSize: 22, color: colors.ink, marginBottom: 2 },
   sub: { fontFamily: fonts.body, fontSize: 13, color: colors.inkSoft, marginBottom: 20 },
   petCard: { padding: 18, marginBottom: 24 },

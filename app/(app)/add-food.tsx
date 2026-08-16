@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, Pressable, ScrollView } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { X, UtensilsCrossed } from "@/components/icons";
 import { FoodSearchField } from "@/components/ui/FoodSearchField";
 import { Chip } from "@/components/ui/Chip";
@@ -63,51 +64,53 @@ export default function AddFood() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.sheet}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>{existing ? "Edit food" : "Add food"}</Text>
-        <Pressable onPress={() => router.back()} style={styles.closeBtn}>
-          <X size={16} color={colors.ink} />
-        </Pressable>
-      </View>
+    <SafeAreaView style={styles.screen} edges={["top"]}>
+      <ScrollView contentContainerStyle={styles.sheet}>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>{existing ? "Edit food" : "Add food"}</Text>
+          <Pressable onPress={() => router.back()} style={styles.closeBtn}>
+            <X size={16} color={colors.ink} />
+          </Pressable>
+        </View>
 
-      <Text style={styles.label}>Category</Text>
-      <View style={styles.chipRow}>
-        {(["dry", "wet"] as FoodCategory[]).map((c) => (
-          <Chip key={c} label={c === "dry" ? "Dry" : "Wet"} active={draft.category === c} onPress={() => patch({ category: c })} />
-        ))}
-      </View>
+        <Text style={styles.label}>Category</Text>
+        <View style={styles.chipRow}>
+          {(["dry", "wet"] as FoodCategory[]).map((c) => (
+            <Chip key={c} label={c === "dry" ? "Dry" : "Wet"} active={draft.category === c} onPress={() => patch({ category: c })} />
+          ))}
+        </View>
 
-      <FoodSearchField food={draft} onChange={patch} />
+        <FoodSearchField food={draft} onChange={patch} />
 
-      <Text style={styles.label}>Daily amount</Text>
-      <View style={styles.amountCard}>
-        <UtensilsCrossed size={18} color={colors.ink} />
-        <TextInput
-          value={draft.dailyGrams}
-          onChangeText={(v) => patch({ dailyGrams: v })}
-          placeholder="e.g. 40"
-          keyboardType="number-pad"
-          placeholderTextColor={colors.outlineVariant}
-          style={styles.amountInput}
+        <Text style={styles.label}>Daily amount</Text>
+        <View style={styles.amountCard}>
+          <UtensilsCrossed size={18} color={colors.ink} />
+          <TextInput
+            value={draft.dailyGrams}
+            onChangeText={(v) => patch({ dailyGrams: v })}
+            placeholder="e.g. 40"
+            keyboardType="number-pad"
+            placeholderTextColor={colors.outlineVariant}
+            style={styles.amountInput}
+          />
+          <Text style={styles.amountUnit}>g / day</Text>
+        </View>
+
+        <Text style={styles.label}>Split across how many meals?</Text>
+        <View style={styles.chipRow}>
+          {[1, 2, 3, 4].map((n) => (
+            <Chip key={n} label={`${n}`} active={draft.mealsPerDay === n} onPress={() => patch({ mealsPerDay: n })} />
+          ))}
+        </View>
+
+        <View style={{ height: 16 }} />
+        <PrimaryButton
+          label={saving ? "Saving…" : existing ? "Save changes" : "Add food"}
+          disabled={!draft.foodName.trim() || !draft.dailyGrams.trim() || saving}
+          onPress={save}
         />
-        <Text style={styles.amountUnit}>g / day</Text>
-      </View>
-
-      <Text style={styles.label}>Split across how many meals?</Text>
-      <View style={styles.chipRow}>
-        {[1, 2, 3, 4].map((n) => (
-          <Chip key={n} label={`${n}`} active={draft.mealsPerDay === n} onPress={() => patch({ mealsPerDay: n })} />
-        ))}
-      </View>
-
-      <View style={{ height: 16 }} />
-      <PrimaryButton
-        label={saving ? "Saving…" : existing ? "Save changes" : "Add food"}
-        disabled={!draft.foodName.trim() || !draft.dailyGrams.trim() || saving}
-        onPress={save}
-      />
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

@@ -83,6 +83,11 @@ create table if not exists foods (
   food_name text,
   daily_grams numeric not null,
   meals_per_day int not null default 1,
+  -- food_brand, food_image_url, food_barcode, food_ingredients_text,
+  -- protein_pct, fat_pct, fiber_pct, ash_pct, kcal_100g: left in place for
+  -- any rows written before the Open Pet Food Facts lookup was removed.
+  -- The app no longer reads or writes these — safe to drop in a future
+  -- migration if you don't need the old data.
   food_brand text,
   food_image_url text,
   food_barcode text,

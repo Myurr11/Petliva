@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, Pressable } from "react-native";
 import { router } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { X, Plus, Minus } from "@/components/icons";
 import { Chip } from "@/components/ui/Chip";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
@@ -61,6 +62,7 @@ export default function LogMeal() {
 
   if (foods.length === 0) {
     return (
+      <SafeAreaView style={styles.screen} edges={["top"]}>
       <View style={styles.sheet}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>Log a feeding</Text>
@@ -70,10 +72,12 @@ export default function LogMeal() {
         </View>
         <Text style={styles.hint}>No food set up yet for this pet — add one from the Food tab first.</Text>
       </View>
+      </SafeAreaView>
     );
   }
 
   return (
+    <SafeAreaView style={styles.screen} edges={["top"]}>
     <View style={styles.sheet}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>Log a feeding</Text>
@@ -142,11 +146,13 @@ export default function LogMeal() {
         onPress={save}
       />
     </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  sheet: { flex: 1, backgroundColor: colors.appBg, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 28 },
+  screen: { flex: 1, backgroundColor: colors.appBg },
+  sheet: { flex: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 28 },
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 18 },
   title: { fontFamily: fonts.display, fontSize: 19, color: colors.ink },
   closeBtn: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 2, borderColor: colors.ink, padding: 6 },

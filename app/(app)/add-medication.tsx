@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, Pressable, ScrollView } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { X } from "@/components/icons";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { DateField } from "@/components/ui/DateField";
@@ -69,7 +70,8 @@ export default function AddMedication() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.sheet}>
+    <SafeAreaView style={styles.screen} edges={["top"]}>
+    <ScrollView contentContainerStyle={styles.sheet}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>{medication ? "Edit medication" : "Add medication"}</Text>
         <Pressable onPress={() => router.back()} style={styles.closeBtn}>
@@ -193,6 +195,7 @@ export default function AddMedication() {
         onPress={save}
       />
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, Pressable } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { X } from "@/components/icons";
 import { Chip } from "@/components/ui/Chip";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
@@ -43,6 +44,7 @@ export default function AddRestock() {
   }
 
   return (
+    <SafeAreaView style={styles.screen} edges={["top"]}>
     <View style={styles.sheet}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>Log a restock</Text>
@@ -82,11 +84,13 @@ export default function AddRestock() {
       <View style={{ flex: 1, minHeight: 20 }} />
       <PrimaryButton label={saving ? "Saving…" : "Save restock"} disabled={!grams || !foodId || saving} onPress={save} />
     </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  sheet: { flex: 1, backgroundColor: colors.appBg, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 28 },
+  screen: { flex: 1, backgroundColor: colors.appBg },
+  sheet: { flex: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 28 },
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 18 },
   title: { fontFamily: fonts.display, fontSize: 19, color: colors.ink },
   closeBtn: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 2, borderColor: colors.ink, padding: 6 },

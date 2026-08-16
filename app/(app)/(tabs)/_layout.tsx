@@ -18,11 +18,11 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
       <View
         style={{
           width: barWidth,
-          height: 64,
+          height: 54,
           flexDirection: "row",
           alignItems: "center",
-          paddingHorizontal: 8,
-          paddingVertical: 8,
+          paddingHorizontal: 6,
+          paddingVertical: 6,
           borderRadius: 999,
           backgroundColor: colors.ink,
           shadowColor: colors.ink,
@@ -36,7 +36,7 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           const options = descriptors[route.key].options;
           const focused = state.index === index;
           const label = typeof options.tabBarLabel === "string" ? options.tabBarLabel : options.title ?? route.name;
-          const icon = options.tabBarIcon?.({ focused, color: focused ? colors.accent : "#8A8078", size: 24 });
+          const icon = options.tabBarIcon?.({ focused, color: focused ? colors.accent : "#8A8078", size: 19 });
 
           return (
             <TouchableOpacity
@@ -50,10 +50,10 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                 if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
               }}
               onLongPress={() => navigation.emit({ type: "tabLongPress", target: route.key })}
-              style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 3 }}
+              style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 2 }}
             >
               {icon}
-              <Text style={{ marginTop: 2, fontFamily: fonts.bodyMedium, fontSize: 10, color: focused ? colors.accent : "#8A8078" }}>
+              <Text style={{ marginTop: 1, fontFamily: fonts.bodyMedium, fontSize: 9.5, color: focused ? colors.accent : "#8A8078" }}>
                 {label}
               </Text>
             </TouchableOpacity>

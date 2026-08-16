@@ -68,15 +68,6 @@ export async function createPetAndFoods(pet: Pet, foods: FoodItem[], vet: VetInf
         food_name: food.foodName,
         daily_grams: Number(food.dailyGrams),
         meals_per_day: food.mealsPerDay,
-        food_brand: food.foodBrand ?? null,
-        food_image_url: food.foodImageUrl ?? null,
-        food_barcode: food.foodBarcode ?? null,
-        food_ingredients_text: food.foodIngredientsText ?? null,
-        protein_pct: food.proteinPct ?? null,
-        fat_pct: food.fatPct ?? null,
-        fiber_pct: food.fiberPct ?? null,
-        ash_pct: food.ashPct ?? null,
-        kcal_100g: food.kcalPer100g ?? null,
       })
       .select()
       .single();
@@ -105,15 +96,6 @@ export async function insertFood(petId: string, food: FoodItem) {
       food_name: food.foodName,
       daily_grams: Number(food.dailyGrams) || 0,
       meals_per_day: food.mealsPerDay,
-      food_brand: food.foodBrand ?? null,
-      food_image_url: food.foodImageUrl ?? null,
-      food_barcode: food.foodBarcode ?? null,
-      food_ingredients_text: food.foodIngredientsText ?? null,
-      protein_pct: food.proteinPct ?? null,
-      fat_pct: food.fatPct ?? null,
-      fiber_pct: food.fiberPct ?? null,
-      ash_pct: food.ashPct ?? null,
-      kcal_100g: food.kcalPer100g ?? null,
     })
     .select()
     .single();
@@ -129,15 +111,6 @@ export async function updateFood(food: FoodItem) {
       food_name: food.foodName,
       daily_grams: Number(food.dailyGrams) || 0,
       meals_per_day: food.mealsPerDay,
-      food_brand: food.foodBrand ?? null,
-      food_image_url: food.foodImageUrl ?? null,
-      food_barcode: food.foodBarcode ?? null,
-      food_ingredients_text: food.foodIngredientsText ?? null,
-      protein_pct: food.proteinPct ?? null,
-      fat_pct: food.fatPct ?? null,
-      fiber_pct: food.fiberPct ?? null,
-      ash_pct: food.ashPct ?? null,
-      kcal_100g: food.kcalPer100g ?? null,
     })
     .eq("id", food.id);
   if (error) throw error;

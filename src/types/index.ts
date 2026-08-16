@@ -24,33 +24,6 @@ export interface FoodItem {
   foodName: string;
   dailyGrams: string;
   mealsPerDay: number;
-  // Populated when the food was picked from an Open Pet Food Facts search
-  // result rather than typed manually. All optional — free-text entry still
-  // works with none of these set.
-  foodBrand?: string;
-  foodImageUrl?: string;
-  foodBarcode?: string;
-  foodIngredientsText?: string;
-  proteinPct?: number;
-  fatPct?: number;
-  fiberPct?: number;
-  ashPct?: number;
-  kcalPer100g?: number;
-}
-
-/** A single search result from the Open Pet Food Facts API. */
-export interface PetFoodProduct {
-  code: string;
-  name: string;
-  brand: string;
-  imageUrl?: string;
-  quantity?: string;
-  ingredientsText?: string;
-  proteinPct?: number;
-  fatPct?: number;
-  fiberPct?: number;
-  ashPct?: number;
-  kcalPer100g?: number;
 }
 
 export interface FeedingLog {

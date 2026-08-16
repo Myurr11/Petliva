@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, Pressable, ScrollView } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { X } from "@/components/icons";
 import { DateField } from "@/components/ui/DateField";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
@@ -61,87 +62,89 @@ export default function AddAppointment() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.sheet}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>{appointment ? "Edit vet appointment" : "Add vet appointment"}</Text>
-        <Pressable onPress={() => router.back()} style={styles.closeBtn}>
-          <X size={16} color={colors.ink} />
-        </Pressable>
-      </View>
+    <SafeAreaView style={styles.screen} edges={["top"]}>
+      <ScrollView contentContainerStyle={styles.sheet}>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>{appointment ? "Edit vet appointment" : "Add vet appointment"}</Text>
+          <Pressable onPress={() => router.back()} style={styles.closeBtn}>
+            <X size={16} color={colors.ink} />
+          </Pressable>
+        </View>
 
-      <DateField label="Date" value={date} onChange={setDate} />
+        <DateField label="Date" value={date} onChange={setDate} />
 
-      {/* TIME SELECTION */}
-      <Text style={styles.label}>Appointment Time</Text>
-      <View style={styles.chipRow}>
-        {TIME_PRESETS.map((preset) => {
-          const isSelected = selectedTimePreset === preset;
-          return (
-            <Pressable
-              key={preset}
-              onPress={() => setSelectedTimePreset(preset)}
-              style={[styles.chip, isSelected && styles.chipSelected]}
-            >
-              <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>{preset}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-      {selectedTimePreset === "Custom" && (
+        {/* TIME SELECTION */}
+        <Text style={styles.label}>Appointment Time</Text>
+        <View style={styles.chipRow}>
+          {TIME_PRESETS.map((preset) => {
+            const isSelected = selectedTimePreset === preset;
+            return (
+              <Pressable
+                key={preset}
+                onPress={() => setSelectedTimePreset(preset)}
+                style={[styles.chip, isSelected && styles.chipSelected]}
+              >
+                <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>{preset}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        {selectedTimePreset === "Custom" && (
+          <TextInput
+            value={customTime}
+            onChangeText={setCustomTime}
+            placeholder="Enter time (e.g. 11:15 AM)"
+            placeholderTextColor={colors.outlineVariant}
+            style={styles.input}
+          />
+        )}
+
+        {/* VET / HOSPITAL DETAILS */}
+        <Text style={styles.label}>Hospital / Clinic Name</Text>
         <TextInput
-          value={customTime}
-          onChangeText={setCustomTime}
-          placeholder="Enter time (e.g. 11:15 AM)"
+          value={hospitalName}
+          onChangeText={setHospitalName}
+          placeholder="e.g. Valley Pet Hospital"
           placeholderTextColor={colors.outlineVariant}
           style={styles.input}
         />
-      )}
 
-      {/* VET / HOSPITAL DETAILS */}
-      <Text style={styles.label}>Hospital / Clinic Name</Text>
-      <TextInput
-        value={hospitalName}
-        onChangeText={setHospitalName}
-        placeholder="e.g. Valley Pet Hospital"
-        placeholderTextColor={colors.outlineVariant}
-        style={styles.input}
-      />
+        <Text style={styles.label}>Doctor / Vet Name</Text>
+        <TextInput
+          value={doctorName}
+          onChangeText={setDoctorName}
+          placeholder="e.g. Dr. Sarah Smith"
+          placeholderTextColor={colors.outlineVariant}
+          style={styles.input}
+        />
 
-      <Text style={styles.label}>Doctor / Vet Name</Text>
-      <TextInput
-        value={doctorName}
-        onChangeText={setDoctorName}
-        placeholder="e.g. Dr. Sarah Smith"
-        placeholderTextColor={colors.outlineVariant}
-        style={styles.input}
-      />
+        <Text style={styles.label}>Vet Phone Number (optional)</Text>
+        <TextInput
+          value={phoneNo}
+          onChangeText={setPhoneNo}
+          placeholder="e.g. +1 555-0192"
+          placeholderTextColor={colors.outlineVariant}
+          keyboardType="phone-pad"
+          style={styles.input}
+        />
 
-      <Text style={styles.label}>Vet Phone Number (optional)</Text>
-      <TextInput
-        value={phoneNo}
-        onChangeText={setPhoneNo}
-        placeholder="e.g. +1 555-0192"
-        placeholderTextColor={colors.outlineVariant}
-        keyboardType="phone-pad"
-        style={styles.input}
-      />
+        <Text style={styles.label}>Note (optional)</Text>
+        <TextInput
+          value={note}
+          onChangeText={setNote}
+          placeholder="e.g. Annual checkup + vaccinations"
+          placeholderTextColor={colors.outlineVariant}
+          style={styles.input}
+        />
 
-      <Text style={styles.label}>Note (optional)</Text>
-      <TextInput
-        value={note}
-        onChangeText={setNote}
-        placeholder="e.g. Annual checkup + vaccinations"
-        placeholderTextColor={colors.outlineVariant}
-        style={styles.input}
-      />
-
-      <View style={{ height: 16 }} />
-      <PrimaryButton
-        label={saving ? "Saving…" : appointment ? "Save changes" : "Save appointment"}
-        disabled={!date.trim() || saving}
-        onPress={save}
-      />
-    </ScrollView>
+        <View style={{ height: 16 }} />
+        <PrimaryButton
+          label={saving ? "Saving…" : appointment ? "Save changes" : "Save appointment"}
+          disabled={!date.trim() || saving}
+          onPress={save}
+        />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

@@ -248,7 +248,7 @@ export default function Insights() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.appBg },
-  content: { paddingHorizontal: 20, paddingBottom: 100, paddingTop: 8 },
+  content: { paddingHorizontal: 20, paddingBottom: 90, paddingTop: 8 },
   title: { fontFamily: fonts.display, fontSize: 22, color: colors.ink, marginBottom: 2 },
   sub: { fontFamily: fonts.body, fontSize: 13, color: colors.inkSoft, marginBottom: 20 },
   chartCard: { padding: 18, marginBottom: 20 },

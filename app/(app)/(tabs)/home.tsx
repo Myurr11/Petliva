@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, Image, LayoutChangeEvent, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, LayoutChangeEvent, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Plus, UtensilsCrossed, Clock3, Calendar, Pill } from "@/components/icons";
@@ -23,7 +23,6 @@ export default function Home() {
   const activePetId = useAppStore((s) => s.activePetId);
   const startAddPet = useAppStore((s) => s.startAddPet);
   const todayLogs = useAppStore((s) => s.todayLogs());
-  const [openFoodId, setOpenFoodId] = useState<string | null>(null);
 
   const active = activePetId ? pets[activePetId] : undefined;
 
@@ -170,10 +169,6 @@ export default function Home() {
           </View>
         )}
 
-        {foods.map((food) => (
-          <FoodCard key={food.id} food={food} open={openFoodId === food.id} onToggle={() => setOpenFoodId(openFoodId === food.id ? null : food.id)} />
-        ))}
-
         <Text style={styles.sectionLabel}>TODAY'S LOG</Text>
         {todayLogs.length === 0 ? (
           <View style={styles.empty}>
@@ -286,6 +281,12 @@ function CategoryRingPage({
         </View>
       ) : (
         <>
+          {catFoods.length === 1 && (
+            <View style={styles.foodNameTag}>
+              <UtensilsCrossed size={12} color={colors.inkSoft} />
+              <Text style={styles.foodNameTagText} numberOfLines={1}>{catFoods[0].foodName || "Unnamed food"}</Text>
+            </View>
+          )}
           <View style={styles.ringWrap}>
             <Ring pct={pct} />
             <View style={styles.ringCenter}>
@@ -318,51 +319,6 @@ function CategoryRingPage({
   );
 }
 
-function FoodCard({ food, open, onToggle }: { food: FoodItem; open: boolean; onToggle: () => void }) {
-  if (!food.foodBrand && !food.foodImageUrl && !food.proteinPct) return null;
-  return (
-    <Pressable onPress={() => food.foodIngredientsText && onToggle()}>
-      <NeoBox depth={3} radius={16} style={styles.foodCard}>
-        {food.foodImageUrl ? (
-          <Image source={{ uri: food.foodImageUrl }} style={styles.foodImage} />
-        ) : (
-          <View style={[styles.foodImage, styles.foodImageFallback]}>
-            <UtensilsCrossed size={18} color={colors.ink} />
-          </View>
-        )}
-        <View style={{ flex: 1 }}>
-          <View style={styles.foodNameRow}>
-            <View style={[styles.miniBadge, { backgroundColor: food.category === "dry" ? colors.accent : colors.sageBg }]}>
-              <Text style={styles.miniBadgeText}>{food.category === "dry" ? "Dry" : "Wet"}</Text>
-            </View>
-            <Text style={styles.foodName} numberOfLines={1}>{food.foodName}</Text>
-          </View>
-          {!!food.foodBrand && <Text style={styles.foodBrand}>{food.foodBrand}</Text>}
-          {(food.proteinPct || food.fatPct || food.fiberPct) && (
-            <View style={styles.macroRow}>
-              {food.proteinPct ? <MacroBadge label="protein" value={food.proteinPct} /> : null}
-              {food.fatPct ? <MacroBadge label="fat" value={food.fatPct} /> : null}
-              {food.fiberPct ? <MacroBadge label="fiber" value={food.fiberPct} /> : null}
-            </View>
-          )}
-          {!!food.foodIngredientsText && (
-            <Text style={styles.ingredientsToggle}>{open ? "Hide ingredients ▲" : "Show ingredients ▼"}</Text>
-          )}
-          {open && !!food.foodIngredientsText && <Text style={styles.ingredientsText}>{food.foodIngredientsText}</Text>}
-        </View>
-      </NeoBox>
-    </Pressable>
-  );
-}
-
-function MacroBadge({ label, value }: { label: string; value: number }) {
-  return (
-    <View style={styles.macroBadge}>
-      <Text style={styles.macroBadgeText}>{value}% {label}</Text>
-    </View>
-  );
-}
-
 function Stat({ value, label, color = colors.ink }: { value: string; label: string; color?: string }) {
   return (
     <View style={{ alignItems: "center" }}>
@@ -374,7 +330,7 @@ function Stat({ value, label, color = colors.ink }: { value: string; label: stri
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.appBg },
-  content: { paddingHorizontal: 20, paddingBottom: 100, paddingTop: 8 },
+  content: { paddingHorizontal: 20, paddingBottom: 90, paddingTop: 8 },
   emptyStateWrap: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, paddingHorizontal: 20 },
   emptyStateBtn: {
     flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: colors.accent,
@@ -382,7 +338,13 @@ const styles = StyleSheet.create({
   },
   emptyStateBtnLabel: { fontFamily: fonts.labelBold, color: colors.onAccent, fontSize: 14 },
   ringCard: { paddingVertical: 24, paddingHorizontal: 20, alignItems: "center" },
-  ringPageTitle: { fontFamily: fonts.labelBold, fontSize: 13, color: colors.ink, letterSpacing: 0.5, marginBottom: 16 },
+  ringPageTitle: { fontFamily: fonts.labelBold, fontSize: 13, color: colors.ink, letterSpacing: 0.5, marginBottom: 10 },
+  foodNameTag: {
+    flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "center",
+    backgroundColor: colors.surfaceAlt, borderRadius: 999, borderWidth: 1.5, borderColor: colors.ink,
+    paddingVertical: 5, paddingHorizontal: 12, marginBottom: 16, maxWidth: 240,
+  },
+  foodNameTagText: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: colors.ink, flexShrink: 1 },
   ringWrap: { width: 180, height: 180 },
   ringCenter: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center" },
   ringTotal: { fontFamily: fonts.monoSemibold, fontSize: 28, color: colors.ink },
@@ -435,19 +397,7 @@ const styles = StyleSheet.create({
   emptyCardTitle: { fontFamily: fonts.bodySemibold, fontSize: 12.5, color: colors.ink },
   emptyCardSub: { fontFamily: fonts.body, fontSize: 11, color: colors.inkSoft, marginTop: 1 },
 
-  foodCard: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, marginBottom: 14 },
-  foodImage: { width: 48, height: 48, borderRadius: 10, backgroundColor: colors.surfaceAlt },
-  foodImageFallback: { alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: colors.ink },
-  foodNameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  foodName: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.ink, flexShrink: 1 },
-  foodBrand: { fontFamily: fonts.body, fontSize: 11.5, color: colors.inkSoft, marginTop: 1 },
-  miniBadge: { borderRadius: 999, borderWidth: 1.5, borderColor: colors.ink, paddingVertical: 2, paddingHorizontal: 7 },
-  miniBadgeText: { fontFamily: fonts.labelBold, fontSize: 9.5, color: colors.ink },
-  macroRow: { flexDirection: "row", gap: 6, marginTop: 6, flexWrap: "wrap" },
-  macroBadge: { backgroundColor: colors.surfaceAlt, borderRadius: 999, paddingVertical: 3, paddingHorizontal: 8, borderWidth: 1.5, borderColor: colors.ink },
-  macroBadgeText: { fontFamily: fonts.mono, fontSize: 10, color: colors.accentDeep },
-  ingredientsToggle: { fontFamily: fonts.bodyMedium, fontSize: 10.5, color: colors.accentDeep, marginTop: 6 },
-  ingredientsText: { fontFamily: fonts.body, fontSize: 11, color: colors.inkSoft, marginTop: 4, lineHeight: 15 },
+
   sectionLabel: { fontFamily: fonts.labelBold, fontSize: 12.5, color: colors.ink, letterSpacing: 0.5, marginBottom: 10, marginTop: 6 },
   empty: { backgroundColor: colors.surface, borderRadius: 14, borderWidth: 2, borderColor: colors.ink, padding: 18 },
   emptyText: { color: colors.inkSoft, fontSize: 13.5, textAlign: "center", fontFamily: fonts.body },

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, Pressable, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 import { PawPrint, Mail } from "@/components/icons";
@@ -79,6 +80,7 @@ export default function SignIn() {
   }
 
   return (
+    <SafeAreaView style={styles.flex} edges={["top", "bottom"]}>
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={styles.container}>
         <View style={styles.hero}>
@@ -129,6 +131,7 @@ export default function SignIn() {
         <Text style={styles.terms}>By continuing you agree to the Terms & Privacy Policy.</Text>
       </View>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

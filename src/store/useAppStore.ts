@@ -492,15 +492,6 @@ export const useAppStore = create<AppState>()(
               foodName: plan.foodName || "Food",
               dailyGrams: plan.dailyGrams || "",
               mealsPerDay: plan.mealsPerDay || 1,
-              foodBrand: plan.foodBrand,
-              foodImageUrl: plan.foodImageUrl,
-              foodBarcode: plan.foodBarcode,
-              foodIngredientsText: plan.foodIngredientsText,
-              proteinPct: plan.proteinPct,
-              fatPct: plan.fatPct,
-              fiberPct: plan.fiberPct,
-              ashPct: plan.ashPct,
-              kcalPer100g: plan.kcalPer100g,
             };
             pets[id] = {
               ...record,
