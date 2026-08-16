@@ -1,240 +1,146 @@
-# Bowlkeeper — pet food tracker (Expo)
+# 🐾 Bowlkeeper — pet food tracker
 
-Expo Router app matching the onboarding + feeding-log flow we prototyped, now
-wired to a real Supabase backend.
+I kept losing track of whether I'd already fed the cat, how much food was left in the bag, and when the last vet visit was. So I built this — a small Expo app, backed by Supabase, that keeps all of that in one place and syncs across my phone and my partner's.
+
+Not trying to be the next big pet app — just solving my own "did I already feed her?" problem properly.
 
 ## Screenshots
 
-Captured on-device via Expo Go, in the order they appear in the actual flow: sign up → login → onboarding → home → food logging → insights → vet (+ vet-related screens) → food (+ food-related screens) → profile.
-
-### Auth
-
+### Sign up / log in
 <table><tr>
-<td align="center"><img src="docs/screenshots/01-signup.jpg" width="200"/><br/>Sign up</td>
-<td align="center"><img src="docs/screenshots/02-login.jpg" width="200"/><br/>Log in</td>
+<td align="center"><img src="docs/screenshots/01-signup.jpg" width="180"/><br/>Sign up</td>
+<td align="center"><img src="docs/screenshots/02-login.jpg" width="180"/><br/>Log in</td>
 </tr></table>
 
-### Onboarding (7 steps)
-
+### Onboarding
 <table><tr>
-<td align="center"><img src="docs/screenshots/03-onboarding-profile.jpg" width="180"/><br/>1. Name & type</td>
-<td align="center"><img src="docs/screenshots/04-onboarding-breed.jpg" width="180"/><br/>2. Breed</td>
-<td align="center"><img src="docs/screenshots/05-onboarding-age.jpg" width="180"/><br/>3. Age</td>
-<td align="center"><img src="docs/screenshots/06-onboarding-weight.jpg" width="180"/><br/>4. Weight</td>
+<td align="center"><img src="docs/screenshots/03-onboarding-profile.jpg" width="150"/><br/>Name & type</td>
+<td align="center"><img src="docs/screenshots/04-onboarding-breed.jpg" width="150"/><br/>Breed</td>
+<td align="center"><img src="docs/screenshots/05-onboarding-age.jpg" width="150"/><br/>Age</td>
+<td align="center"><img src="docs/screenshots/06-onboarding-weight.jpg" width="150"/><br/>Weight</td>
+<td align="center"><img src="docs/screenshots/07-onboarding-vaccinations.jpg" width="150"/><br/>Vaccinations</td>
 </tr><tr>
-<td align="center"><img src="docs/screenshots/07-onboarding-vaccinations.jpg" width="180"/><br/>5. Vaccinations</td>
-<td align="center"><img src="docs/screenshots/08-onboarding-medical-history.jpg" width="180"/><br/>6. Medical history</td>
-<td align="center"><img src="docs/screenshots/09-onboarding-vet-care.jpg" width="180"/><br/>7. Vet care</td>
-<td></td>
+<td align="center"><img src="docs/screenshots/08-onboarding-medical-history.jpg" width="150"/><br/>Medical history</td>
+<td align="center"><img src="docs/screenshots/09-onboarding-vet-care.jpg" width="150"/><br/>Vet care</td>
+<td></td><td></td><td></td>
 </tr></table>
 
-### Home
-
+### Home & food logging
 <table><tr>
-<td align="center"><img src="docs/screenshots/10-home-dry-food.jpg" width="200"/><br/>Dry food ring + reminders</td>
-<td align="center"><img src="docs/screenshots/11-home-wet-food.jpg" width="200"/><br/>Wet food ring (swipe page)</td>
-</tr></table>
-
-### Food logging
-
-<table><tr>
-<td align="center"><img src="docs/screenshots/12-log-a-feeding.jpg" width="200"/><br/>Log a feeding</td>
+<td align="center"><img src="docs/screenshots/10-home-dry-food.jpg" width="180"/><br/>Dry food ring</td>
+<td align="center"><img src="docs/screenshots/11-home-wet-food.jpg" width="180"/><br/>Wet food ring</td>
+<td align="center"><img src="docs/screenshots/12-log-a-feeding.jpg" width="180"/><br/>Log a feeding</td>
 </tr></table>
 
 ### Insights
-
 <table><tr>
-<td align="center"><img src="docs/screenshots/13-insights.jpg" width="200"/><br/>7-day chart + calendar + daily progress</td>
+<td align="center"><img src="docs/screenshots/13-insights.jpg" width="180"/><br/>7-day chart & daily breakdown</td>
 </tr></table>
 
 ### Vet
-
 <table><tr>
-<td align="center"><img src="docs/screenshots/14-vet-tab.jpg" width="200"/><br/>Vet tab overview</td>
-<td align="center"><img src="docs/screenshots/15-add-vet-appointment.jpg" width="200"/><br/>Add appointment</td>
-<td align="center"><img src="docs/screenshots/16-add-medication.jpg" width="200"/><br/>Add medication</td>
-<td align="center"><img src="docs/screenshots/17-vet-visit-detail.jpg" width="200"/><br/>Visit detail (diagnosis/notes)</td>
+<td align="center"><img src="docs/screenshots/14-vet-tab.jpg" width="180"/><br/>Vet tab</td>
+<td align="center"><img src="docs/screenshots/15-add-vet-appointment.jpg" width="180"/><br/>Add appointment</td>
+<td align="center"><img src="docs/screenshots/16-add-medication.jpg" width="180"/><br/>Add medication</td>
+<td align="center"><img src="docs/screenshots/17-vet-visit-detail.jpg" width="180"/><br/>Visit detail</td>
 </tr></table>
 
-### Food
-
+### Food inventory
 <table><tr>
-<td align="center"><img src="docs/screenshots/18-food-tab.jpg" width="200"/><br/>Inventory + stock</td>
-<td align="center"><img src="docs/screenshots/19-log-a-restock.jpg" width="200"/><br/>Log a restock</td>
+<td align="center"><img src="docs/screenshots/18-food-tab.jpg" width="180"/><br/>Stock & days-left</td>
+<td align="center"><img src="docs/screenshots/19-log-a-restock.jpg" width="180"/><br/>Log a restock</td>
 </tr></table>
 
 ### Profile
-
 <table><tr>
-<td align="center"><img src="docs/screenshots/20-profile.jpg" width="200"/><br/>Pets, health summary, sign out</td>
+<td align="center"><img src="docs/screenshots/20-profile.jpg" width="180"/><br/>Pets & health summary</td>
 </tr></table>
 
-## Requirements
-- **Node.js ≥ 20.19.4** (Expo SDK 54's minimum — check with `node -v`; use `nvm use 20.19.4` if needed)
-- Expo SDK 54, pinned to the exact versions its own compatibility check reports as expected: `react@19.1.0`, `react-dom@19.1.0`, `react-native@0.81.5`, `babel-preset-expo@~54.0.10`. If you ever see Metro print a "should be updated for best compatibility" list on startup, **trust that list over any version number in this README** — it's read directly from your installed `expo` package, which is the actual source of truth and updates more often than this file can.
+## Features
 
-> Icons are `@expo/vector-icons` (`MaterialCommunityIcons` + `Feather`, wrapped
-> in `src/components/icons.tsx` under consistent names — `PawPrint`, `Cat`,
-> `Dog`, `Stethoscope`, etc.), not `lucide-react-native`. Lucide's React
-> Native package still pins a `react@^18` peer dependency, which breaks `npm i`
-> on React 19 projects. `@expo/vector-icons` ships inside `expo` itself, so it's
-> always version-matched to your SDK with no separate install step.
->
-> Fonts are Plus Jakarta Sans (headlines) + Be Vietnam Pro (body/labels) +
-> IBM Plex Mono (gram/data readouts), loaded via `@expo-google-fonts/*` in
-> `app/_layout.tsx`.
+**Auth**
+- Email/password sign-up & login, plus "Continue with Google"
+- Session persists across app restarts; signing in on a new device pulls your real data down from Supabase instead of starting you over
+
+**Onboarding (7 steps)**
+- Pet name, type (dog/cat), breed, age, weight
+- Vaccination checklist and optional medical history/notes
+- Optional first vet appointment + medication, so a new pet can be fully set up in one pass
+- "Add another pet" re-runs the same flow for multi-pet households
+
+**Home**
+- A fill-up ring per food category (dry/wet tracked separately — no more meaningless combined totals), swipeable if a pet has both
+- Quick "Log a feeding" — pick the food, the meal (breakfast/lunch/dinner/snack), and either use the suggested grams or type an exact number
+- Upcoming vet appointments and active medications surfaced right on Home, so you don't have to go digging
+
+**Insights**
+- 7-day feeding chart per food type, with the daily target line
+- Browse any day on a calendar and see exactly what was logged and when
+
+**Vet**
+- Appointments (with hospital, doctor, phone, notes) and a visit-detail screen for diagnosis/diagnostic notes after the fact
+- Medications with dosage, schedule, and a real start-date + duration (so a 3-day course actually stops showing as "active" after 3 days)
+- Vaccination checklist from onboarding, editable later
+
+**Food inventory**
+- Stock remaining per food, with an estimated "days left" based on your logged usage
+- Restock log so you can see exactly when and how much you bought
+
+**Multi-device sync**
+- Every log, restock, appointment, and medication is written to Supabase, not just kept on-device
+- Signing into the same account on a different phone re-fetches everything, so you're never stuck redoing onboarding just because you signed out
+
+## Tech stack
+
+- **Expo** (SDK 54) + **Expo Router**, React Native, TypeScript
+- **Zustand** for local state, persisted to AsyncStorage as an offline cache
+- **Supabase** — Postgres, Auth (email/password + Google OAuth), Row Level Security scoped to `auth.uid()`
+- **Open Pet Food Facts** API for food search (brand, macros, ingredients)
+- Custom neo-brutalist design system — thick borders, hard offset shadows, no external UI kit
 
 ## Setup
 
 ```bash
 npm install
-npx expo install --fix   # aligns every expo-* package to exact SDK 54 versions
+npx expo install --fix   # aligns expo-* packages to the exact SDK version
 npx expo start
 ```
-Note the `npx` — `expo` is not a global command here, so `npm expo start` or bare
-`expo start` won't work; use `npx expo start` or `npm start` (same thing, defined
-in package.json's `scripts`).
 
-Scan the QR code with Expo Go, or press `i` / `a` for a simulator.
+Scan the QR with Expo Go, or press `i` / `a` for a simulator.
 
-### If npm install ever fails with an ERESOLVE peer conflict again
-This happens because Expo's own sub-dependencies (like `expo-router`, `expo`
-itself) get patch updates constantly, and a hand-pinned `react`/`react-native`
-version in package.json can fall out of sync with what the *latest* patch of
-`expo` expects. The fix is always the same, and doesn't require re-guessing
-version numbers:
-```bash
-rm -rf node_modules package-lock.json
-npm install --legacy-peer-deps
-npx expo install --fix
-```
-`expo install --fix` reads your installed `expo` version and rewrites every
-`expo-*`/`react-native-*` package (and React itself) to the exact versions that
-version of Expo expects — it's the source of truth, not the numbers in this
-README.
-
-### App icons
-`assets/icon.png`, `adaptive-icon.png`, `splash-icon.png`, and `favicon.png`
-are placeholder art (an amber paw mark on the app's ink background) so the
-project runs without Metro's "unable to resolve asset" error. Swap them for
-real artwork whenever you're ready — same filenames, same folder.
-
-`.env` is already filled in with your Supabase project:
-```
-EXPO_PUBLIC_SUPABASE_URL=https://cdybgeqvnaxcgwzmjoai.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
-```
-This is the publishable/anon key, so it's meant to be shipped in the client —
-just don't commit your **service role** key anywhere in this app.
-
-### One-time Supabase setup
-Run `supabase/schema.sql` in your project's SQL editor (Dashboard → SQL Editor).
-It creates `pets` (now with `vet_visit_frequency`), `feeding_plans` (with Open
-Pet Food Facts columns), `feeding_logs`, `food_stock`, `vet_appointments`,
-`medications`, and RLS policies scoped to `auth.uid()`. The whole file is
-idempotent — safe to re-run any time, including after a partial run that hit
-an error, without touching existing data.
-
-For **Google sign-in** to work you also need, in the Supabase Dashboard:
-1. Authentication → Providers → enable Google, with your OAuth client ID/secret
-2. Authentication → URL Configuration → add `bowlkeeper://auth-callback` as a redirect URL
-
-Email/password sign-up works out of the box with no extra config.
-
-## Design system
-Full app reskin, neo-brutalist: warm cream background (`#FCF9F8`), thick 2px black borders on every card/button/input, hard offset shadows with no blur (built via `NeoBox` — real RN shadow props render as a soft Android `elevation` blur, not the crisp offset rectangle this style needs, so it's faked correctly with stacked Views instead), solid mustard (`#FFC107`) for selected/primary states, Plus Jakarta Sans headlines + Be Vietnam Pro body text. Every screen — onboarding, auth, all four tabs, all four modals — uses the same system. All tokens live in `src/theme/tokens.ts`; the shared components (`Chip`, `PrimaryButton`, `TextField`, `ScreenTitle`, `ProgressDots`, `Ring`, `NeoBox`, `NeoOnboardHeader`, `PetSwitcherHeader`) are what make the look cascade everywhere without per-screen one-offs.
-
-## Calendar / date selection
-- **Date fields everywhere** (onboarding vet-care, add-appointment) now open a real calendar picker (`DateField` → `CalendarGrid`, month-grid navigation, no external date-picker dependency) instead of a free-text "YYYY-MM-DD" input.
-- **Insights**: redesigned around a calendar. A horizontal `WeekStrip` (like most calendar/fitness apps) lets you browse any day — days with a vet appointment get a small dot marker. Below it, a detail panel for whichever day is selected: that day's vet appointment (if any, with a quick "add one" prompt if not), every feeding logged that day (food category, time, grams), and the day's total. The old flat "day by day" list is gone, superseded by this.
-- **Home**: a new reminders card between the log button and food cards shows the next 1–2 upcoming vet appointments and the active pet's medication list (name + schedule) as a daily reminder, tapping through to the Vet tab for details.
-
-## Navigation
-- **Home / Insights / Vet / Food** — bottom tabs, now a **floating pill-shaped bar** (rounded, inset from the screen edges, soft lifted shadow) rather than a full-width rectangle. Each tab starts with the shared `PetSwitcherHeader` (pet chips + profile icon).
-- **Profile** — a top-right header icon on every tab, not in the tab bar at all (pushed as a regular screen with a back button).
-
-## Calendar & date selection
-- **`DateField`** (`src/components/ui/DateField.tsx`) — the one reusable date-selection UI for the whole app. A tappable field that opens a modal month-grid calendar (`CalendarGrid.tsx`, built from plain Views/Pressables, no native date-picker dependency). Replaces the old free-text "YYYY-MM-DD" inputs in the vet-care onboarding step and the add-appointment modal.
-- **`WeekStrip`** (`src/components/ui/WeekStrip.tsx`) — a horizontal 7-day week selector with prev/next navigation and dots marking days with a vet appointment, used at the top of the Insights tab.
-- **Insights tab redesign**: below the existing streak/consistency/chart stats, a week-strip calendar lets you browse any day. Selecting a day shows that day's feeding log (all foods, with times and grams) and, if there was one, a highlighted vet-appointment card for that date — or a quick "Add a vet appointment for this day" prompt if there wasn't one, pre-filled with the date you tapped.
-- **Home tab**: a reminder card surfaces the next couple of upcoming vet appointments and any active medications, tappable through to the Vet tab for full detail.
-
-## Deleting appointments & medications
-- **Vet tab**: every appointment and medication now has a trash icon. Tapping it confirms, then removes it from the device immediately and best-effort deletes it from Supabase too.
-- **The ID-sync fix this needed**: appointments and medications were being created with a local, client-generated id (`Date.now()`-based) that was never reconciled with the real id Supabase assigns on insert — so a delete-by-id call would silently target nothing. `insertAppointment`/`insertMedication` now return the real Supabase id, and `add-appointment.tsx`/`add-medication.tsx` swap the local id for it right after a successful write (`syncAppointmentId`/`syncMedicationId` in the store). Entries added before this fix won't have a matching remote row under their local id — deleting them locally still works fine, the Supabase-side delete for those specific old entries is just a no-op.
-- **Why deleted Supabase rows didn't disappear from the app before this**: at the time, the app only ever read appointments/medications from local on-device storage and never re-fetched from Supabase — so removing rows directly in the Supabase dashboard had no effect on what was already cached on a phone. That's since been fixed (see "Reading logs/appointments/medications back from Supabase" below): the app now re-pulls everything from Supabase on sign-in and app launch, so a dashboard-side delete *will* disappear from the app the next time it hydrates. Deleting from the app itself is still the more direct route day-to-day.
-
-## Medication courses (start date + duration)
-Medications now have a real prescribed date range instead of showing forever:
-- **`add-medication.tsx`**: after dosage/schedule presets, pick a start date (via `DateField`) and a duration in days (3/5/7/10/14 preset chips, or Custom). Shows a "Runs Aug 10 through Aug 13" confirmation as you fill it in.
-- **`src/lib/medicationStatus.ts`**: the one shared helper (`getMedicationStatus`) every screen uses to compute a medication's `upcoming` / `active` / `completed` state and "day X of Y" for any given date — so the logic for "is this course covering today?" lives in exactly one place.
-- **Home**: only shows medications actually active *today*, with a "Day X" badge. If a course hasn't started yet or has finished, it no longer clutters the reminder card.
-- **Vet tab**: lists every medication ever added, sorted active → upcoming → completed, each with its date range and status badge; completed courses are dimmed rather than hidden, so history isn't lost.
-- **Insights**: the day-detail medication section is now scoped to whichever day you're browsing — a course only shows up on days it actually covers, with the same "Day X" badge.
-- **Data model**: `Medication` gained `startDate` (ISO date) and `durationDays`. Supabase's `medications` table gained matching `start_date`/`duration_days` columns.
-- **Migration**: store is now on persisted-state version 5. Existing medications (added before this change, with no date range) are backfilled as starting today with a 30-day duration — so they keep showing as active rather than silently vanishing; correct the real dates from the Vet tab if needed.
-
-## Separate dry/wet rings + exact-gram logging
-Two real bugs from actual use, both fixed:
-- **Rings were combining dry + wet into one target.** Feeding 63g dry + 80g wet no longer sums to a meaningless 143g goal. Home now shows two separate swipeable ring pages — dry first, swipe to wet, tap either page-dot to jump directly. Each page's ring, remaining-grams, and meals-logged are scoped to only that category's foods. A category with no foods set up shows a plain "not set up yet" message instead of a misleading empty ring at 0%.
-- **Logging was stuck to multiples of 5.** The +/-5 stepper buttons are still there for quick nudges, but the number itself is now a directly-editable text field — tap it and type the exact amount (e.g. 26g out of a 35g meal), rather than only landing on values the stepper happened to produce.
-
-## Multi-food (dry + wet)
-A pet can now have several foods instead of exactly one — typically one dry + one wet, optionally more:
-- **Onboarding** (`food-plan.tsx`, step 8): shows a dry-food card and a wet-food card by default, each with its own Open Pet Food Facts search, daily grams, and meals/day. Leave either blank if it doesn't apply. "Add dry food" / "Add wet food" buttons below append more cards for pets fed 3+ foods.
-- **Home**: the ring shows *combined* progress (today's total across all foods vs. the summed daily target); a per-food breakdown list appears under the ring once a pet has more than one food. Each food gets its own card lower down (image, brand, macros, expandable ingredients).
-- **Log a feeding**: if a pet has more than one food, a food picker (chips, e.g. "Dry · Royal Canin Fit 32") appears first; grams/suggestion adjust to whichever food is selected.
-- **Food tab (Inventory)**: one stock card *per food* — each with its own remaining grams, days-left estimate, and restock history. "Log a restock" is scoped to that specific food.
-- **Insights**: daily target and meals-per-day are summed across all foods; "estimated protein fed today" is now a weighted sum (each food's grams-fed-today × its own protein %).
-- **Data model**: `PetRecord.foods: FoodItem[]` replaced the old singular `plan: FeedingPlan`. `FeedingLog` and `StockEntry` both gained a `foodId` so every log/restock is scoped to a specific food. Supabase gained a `foods` table (superseding `feeding_plans`, which is left in place unused rather than dropped, so no historical data is lost) plus `food_id` columns on `feeding_logs` and `food_stock`.
-- **Migration**: `useAppStore.ts` is now on persisted-state version 4. The v3→v4 step automatically wraps any existing single-food pet's plan into one `FoodItem` (tagged "dry") and backfills `foodId` onto all of that pet's existing logs/restocks — no data loss, no re-onboarding needed, runs once on first launch after updating.
-
-## What's wired up
-- Full onboarding, now 8 steps: auth → profile → pet type → breed → weight → vaccinations → medical history → **vet care** (new) → feeding plan
-- **Real Supabase auth**: email/password sign-up & login, Google OAuth via `expo-web-browser` + PKCE exchange, session restored automatically on relaunch (and cleared automatically if the local "authed" flag ever drifts from the real session)
-- Finishing onboarding writes the pet, feeding plan, and any vet care captured to Supabase
-- Each feeding log is written to `feeding_logs` in Supabase *and* kept locally — if the network call fails, the local entry still counts toward today's ring so a bad connection never blocks logging
-- **Home**: bowl-fill ring, today's feeding log, food card with image/brand/macros from Open Pet Food Facts
-- **Insights**: 7-day streak counter, % of days all planned meals were logged, average grams/day, estimated protein fed today, and a custom SVG bar chart
-- **Vet** (new): visit frequency (editable chips), upcoming/past appointments with an "Add appointment" modal, medications list with an "Add medication" modal, and the vaccination checklist captured at onboarding
-- **Food**: current stock remaining, estimated days left, restock history, "Log a restock" modal
-- **Profile**: your name/email, every pet with tap-to-switch, the active pet's vaccination/medical summary with a link to the full Vet tab, "Add another pet," and sign out
-- **Food search (Open Pet Food Facts)**: search-as-you-type in the feeding-plan step, pulling in brand/photo/ingredients/macros; surfaced on Home (food card) and Insights (protein-today card)
-- **Multi-pet**: each pet has its own plan, logs, stock, and vet info — all scoped by `pet_id` in Supabase
-- All state persists locally via Zustand + AsyncStorage as an offline cache, keyed by pet
-
-## What's still stubbed / next steps
-- **Store migration note**: `useAppStore.ts` is now on persisted-state version 3. Two migrations run automatically and in order on first launch after updating — v1→v2 recovers pre-multi-pet data into the `pets{}` map, and v2→v3 backfills an empty `vet{}` object onto any pet record that predates the Vet feature. Both are one-time and automatic; you shouldn't need to redo onboarding.
-- **Reading logs/appointments/medications back from Supabase**: fixed — `fetchUserPetRecords()` in `src/lib/supabase.ts` re-fetches every pet, food, log, restock, appointment, and medication for the signed-in user, and `hydrateFromServer()` rebuilds the local Zustand cache from it. This runs on sign-in and on every app launch/session restore (`app/_layout.tsx`), so a second device signing into the same account sees the same data, and a sign-out-then-sign-in on the same device no longer loses access to an already-onboarded account. Two devices editing at the *same moment* can still show stale data on one of them until its next hydrate — there's no live/realtime sync yet, just a fresh pull on each app open.
-- **Notifications**: no reminder for missed meals, upcoming vet appointments, or medication schedules yet — a natural next feature via `expo-notifications`, now that the underlying data (appointments, medication schedules) exists to schedule off of.
-- **Editing/deleting** appointments and medications isn't built yet — you can add, but not yet edit or remove, an entry.
-- **Retry queue** for anything that fails to sync while offline.
+**Supabase:**
+1. Run `supabase/schema.sql` in your project's SQL editor — creates all the tables (`pets`, `foods`, `feeding_logs`, `food_stock`, `vet_appointments`, `medications`) plus RLS policies. It's idempotent, safe to re-run.
+2. Drop your project URL and anon key into `.env`:
+   ```
+   EXPO_PUBLIC_SUPABASE_URL=your-project-url
+   EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+   ```
+3. For Google sign-in: enable the Google provider under Authentication → Providers, and add `bowlkeeper://auth-callback` as a redirect URL. Email/password works with no extra setup.
 
 ## Folder structure
+
 ```
 app/
-  _layout.tsx            root stack, font loading, Supabase session restore
-  index.tsx               redirects based on auth/onboarding state
-  (auth)/sign-in.tsx      email/password + Google OAuth
-  (onboarding)/            7-step onboarding stack (also re-entered at pet-type to add another pet)
-  (app)/_layout.tsx        stack wrapping the tab group + modals
-  (app)/(tabs)/home.tsx    bowl-fill ring, today's log, pet switcher
-  (app)/(tabs)/insights.tsx  streak, consistency %, SVG bar chart
-  (app)/(tabs)/inventory.tsx  stock remaining, days-left estimate, restock history
-  (app)/(tabs)/profile.tsx  user info, pet switcher, health details, sign out
-  (app)/log-meal.tsx       modal: log a feeding
-  (app)/add-restock.tsx    modal: log a food restock
+  (auth)/                sign in / sign up
+  (onboarding)/           7-step pet setup flow
+  (app)/(tabs)/           Home, Insights, Vet, Food
+  (app)/                  modals — log feeding, add restock, add appointment, add medication
 src/
-  theme/tokens.ts          colors, fonts, radii
-  store/useAppStore.ts      zustand store — pets keyed by id, activePetId, onboarding draft
-  lib/supabase.ts          supabase client + createPetAndPlan / insertFeedingLog / insertRestock
-  lib/petFoodApi.ts        Open Pet Food Facts search client
-  components/icons.tsx     @expo/vector-icons wrapped under lucide-style names
-  components/ui/           shared Button, Chip, TextField, Ring, FoodSearchField, etc.
-  constants/data.ts        breed lists, vaccines, medical tags
-  types/index.ts
+  store/useAppStore.ts    zustand store, pets keyed by id
+  lib/supabase.ts         supabase client + all read/write helpers
+  lib/petFoodApi.ts       Open Pet Food Facts search
+  components/             shared UI (buttons, chips, rings, calendar, etc.)
+  types/                  shared TypeScript types
 supabase/
-  schema.sql               run once in the Supabase SQL editor (pets, feeding_plans, feeding_logs, food_stock)
-assets/
-  icon.png, adaptive-icon.png, splash-icon.png, favicon.png  (placeholder art)
+  schema.sql              tables + RLS, run once in the SQL editor
 ```
+
+## Known limitations / maybe later
+
+- No push notifications yet for meal reminders or upcoming vet visits — the data's all there, just needs `expo-notifications` wired up
+- Sync is "fetch fresh on open," not realtime — two devices editing at the exact same moment can briefly show different things until the next app open
+- No editing of past feeding logs once saved (you can delete and re-add appointments/medications, but not logs)
+
+---
+
+Built for my own pets 🐕🐈 — feel free to fork it for yours.
