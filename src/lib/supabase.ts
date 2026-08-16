@@ -94,6 +94,60 @@ export async function createPetAndFoods(pet: Pet, foods: FoodItem[], vet: VetInf
   return { petId: petRow.id as string, foodIdMap };
 }
 
+/** Inserts a single food for an already-committed pet (adding food after
+ *  onboarding, from the Food inventory screen). Returns the new row's id. */
+export async function insertFood(petId: string, food: FoodItem) {
+  const { data, error } = await supabase
+    .from("foods")
+    .insert({
+      pet_id: petId,
+      category: food.category,
+      food_name: food.foodName,
+      daily_grams: Number(food.dailyGrams) || 0,
+      meals_per_day: food.mealsPerDay,
+      food_brand: food.foodBrand ?? null,
+      food_image_url: food.foodImageUrl ?? null,
+      food_barcode: food.foodBarcode ?? null,
+      food_ingredients_text: food.foodIngredientsText ?? null,
+      protein_pct: food.proteinPct ?? null,
+      fat_pct: food.fatPct ?? null,
+      fiber_pct: food.fiberPct ?? null,
+      ash_pct: food.ashPct ?? null,
+      kcal_100g: food.kcalPer100g ?? null,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data.id as string;
+}
+
+export async function updateFood(food: FoodItem) {
+  const { error } = await supabase
+    .from("foods")
+    .update({
+      category: food.category,
+      food_name: food.foodName,
+      daily_grams: Number(food.dailyGrams) || 0,
+      meals_per_day: food.mealsPerDay,
+      food_brand: food.foodBrand ?? null,
+      food_image_url: food.foodImageUrl ?? null,
+      food_barcode: food.foodBarcode ?? null,
+      food_ingredients_text: food.foodIngredientsText ?? null,
+      protein_pct: food.proteinPct ?? null,
+      fat_pct: food.fatPct ?? null,
+      fiber_pct: food.fiberPct ?? null,
+      ash_pct: food.ashPct ?? null,
+      kcal_100g: food.kcalPer100g ?? null,
+    })
+    .eq("id", food.id);
+  if (error) throw error;
+}
+
+export async function deleteFood(id: string) {
+  const { error } = await supabase.from("foods").delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function insertFeedingLog(petId: string, log: FeedingLog) {
   const { error } = await supabase.from("feeding_logs").insert({
     pet_id: petId,
@@ -128,6 +182,8 @@ export async function insertAppointment(petId: string, appt: VetAppointment) {
       phone_no: appt.phoneNo ?? null,
       note: appt.note,
       completed: appt.completed,
+      diagnosis: appt.diagnosis ?? null,
+      diagnostic_notes: appt.diagnosticNotes ?? null,
     })
     .select()
     .single();
@@ -145,6 +201,7 @@ export async function insertMedication(petId: string, med: Medication) {
       schedule: med.schedule,
       start_date: med.startDate || null,
       duration_days: med.durationDays || null,
+      appointment_id: med.appointmentId || null,
     })
     .select()
     .single();
@@ -167,6 +224,7 @@ export async function updateAppointment(appt: VetAppointment) {
     date: appt.date, time: appt.time ?? null, hospital_name: appt.hospitalName ?? null,
     doctor_name: appt.doctorName ?? null, phone_no: appt.phoneNo ?? null,
     note: appt.note, completed: appt.completed,
+    diagnosis: appt.diagnosis ?? null, diagnostic_notes: appt.diagnosticNotes ?? null,
   }).eq("id", appt.id);
   if (error) throw error;
 }
@@ -175,12 +233,18 @@ export async function updateMedication(med: Medication) {
   const { error } = await supabase.from("medications").update({
     name: med.name, dosage: med.dosage, schedule: med.schedule,
     start_date: med.startDate || null, duration_days: med.durationDays || null,
+    appointment_id: med.appointmentId || null,
   }).eq("id", med.id);
   if (error) throw error;
 }
 
 export async function updateVaccinations(petId: string, vaccinations: Pet["vaccinations"]) {
   const { error } = await supabase.from("pets").update({ vaccinations }).eq("id", petId);
+  if (error) throw error;
+}
+
+export async function updateMedicalTags(petId: string, medicalTags: Pet["medicalTags"]) {
+  const { error } = await supabase.from("pets").update({ medical_tags: medicalTags }).eq("id", petId);
   if (error) throw error;
 }
 

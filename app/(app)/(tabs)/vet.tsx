@@ -2,21 +2,17 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Syringe, Check, Calendar, Pill, Plus, Dog, Cat, CalendarPlus, MoreVertical } from "@/components/icons";
+import { Syringe, Check, Calendar, Pill, Plus, Dog, Cat, CalendarPlus, MoreVertical, ChevronRight } from "@/components/icons";
 import { PetSwitcherHeader } from "@/components/ui/PetSwitcherHeader";
 import { NeoBox } from "@/components/ui/NeoBox";
 import { useAppStore } from "@/store/useAppStore";
 import { CORE_VACCINES_CAT, CORE_VACCINES_DOG } from "@/constants/data";
 import { colors, fonts } from "@/theme/tokens";
 import { getMedicationStatus } from "@/lib/medicationStatus";
+import { isAppointmentPast } from "@/lib/appointmentTime";
 import { deleteAppointment, deleteMedication, updateVaccinations } from "@/lib/supabase";
 
-function isPast(dateStr: string) {
-  const d = new Date(dateStr);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return d < today;
-}
+const RECENT_PAST_COUNT = 3;
 
 export default function Vet() {
   const record = useAppStore((s) => (s.activePetId ? s.pets[s.activePetId] : undefined));
@@ -39,11 +35,17 @@ export default function Vet() {
   const core = record.pet.type === "dog" ? CORE_VACCINES_DOG : CORE_VACCINES_CAT;
   const PetIcon = record.pet.type === "dog" ? Dog : Cat;
   const upcoming = record.vet.appointments
-    .filter((a) => !a.completed && !isPast(a.date))
+    .filter((a) => !a.completed && !isAppointmentPast(a.date, a.time))
     .sort((a, b) => +new Date(a.date) - +new Date(b.date));
-  const past = record.vet.appointments
-    .filter((a) => a.completed || isPast(a.date))
+  const pastAll = record.vet.appointments
+    .filter((a) => a.completed || isAppointmentPast(a.date, a.time))
     .sort((a, b) => +new Date(b.date) - +new Date(a.date));
+  const past = pastAll.slice(0, RECENT_PAST_COUNT);
+  const olderCount = pastAll.length - past.length;
+
+  function openAppointment(id: string) {
+    router.push({ pathname: "/(app)/appointment-detail", params: { appointmentId: id } });
+  }
 
   function confirmDeleteAppointment(id: string, label: string) {
     Alert.alert("Delete appointment?", label, [
@@ -159,7 +161,7 @@ export default function Vet() {
               <View style={{ gap: 10, marginBottom: 14 }}>
                 {upcoming.map((a) => (
                   <NeoBox key={a.id} depth={3} radius={14} style={{ backgroundColor: colors.accent }}>
-                    <View style={styles.apptRowInner}>
+                    <Pressable onPress={() => openAppointment(a.id)} style={styles.apptRowInner}>
                       <View style={styles.apptIconWrap}>
                         <Calendar size={16} color={colors.ink} />
                       </View>
@@ -180,16 +182,16 @@ export default function Vet() {
                       >
                         <MoreVertical size={19} color={colors.ink} />
                       </Pressable>
-                    </View>
+                    </Pressable>
                   </NeoBox>
                 ))}
               </View>
             )}
 
             {past.length > 0 && (
-              <View style={{ gap: 10, marginBottom: 20 }}>
+              <View style={{ gap: 10, marginBottom: 10 }}>
                 {past.map((a) => (
-                  <View key={a.id} style={styles.apptRow}>
+                  <Pressable key={a.id} onPress={() => openAppointment(a.id)} style={styles.apptRow}>
                     <View style={styles.apptIconWrap}>
                       <Calendar size={16} color={colors.inkSoft} />
                     </View>
@@ -209,9 +211,18 @@ export default function Vet() {
                     >
                       <MoreVertical size={19} color={colors.inkSoft} />
                     </Pressable>
-                  </View>
+                  </Pressable>
                 ))}
               </View>
+            )}
+
+            {pastAll.length > 0 && (
+              <Pressable onPress={() => router.push("/(app)/appointment-history")} style={styles.historyLink}>
+                <Text style={styles.historyLinkText}>
+                  {olderCount > 0 ? `View full history (${olderCount} more)` : "View appointment history"}
+                </Text>
+                <ChevronRight size={14} color={colors.accentDeep} />
+              </Pressable>
             )}
           </>
         )}
@@ -360,6 +371,11 @@ const styles = StyleSheet.create({
   medStatusBadge: { borderRadius: 999, borderWidth: 1.5, borderColor: colors.ink, paddingVertical: 4, paddingHorizontal: 9 },
   medStatusText: { fontFamily: fonts.labelBold, fontSize: 10.5, color: colors.ink },
   menuBtn: { padding: 4, marginRight: -4 },
+  historyLink: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5,
+    paddingVertical: 12, marginBottom: 20,
+  },
+  historyLinkText: { fontFamily: fonts.bodySemibold, fontSize: 12.5, color: colors.accentDeep },
   vaccineCard: { padding: 16 },
   vaccineRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8 },
   vaccineLeft: { flexDirection: "row", alignItems: "center", gap: 8 },

@@ -14,9 +14,12 @@ const SCHEDULE_PRESETS = ["Once daily", "Twice daily", "Every 8 hours", "With fo
 const DURATION_PRESETS = ["3", "5", "7", "10", "14", "Custom"];
 
 export default function AddMedication() {
-  const params = useLocalSearchParams<{ medicationId?: string }>();
+  const params = useLocalSearchParams<{ medicationId?: string; appointmentId?: string }>();
   const activePetId = useAppStore((s) => s.activePetId);
   const medication = useAppStore((s) => activePetId && params.medicationId ? s.pets[activePetId]?.vet.medications.find((m) => m.id === params.medicationId) : undefined);
+  const forAppointment = useAppStore((s) =>
+    activePetId && params.appointmentId ? s.pets[activePetId]?.vet.appointments.find((a) => a.id === params.appointmentId) : undefined
+  );
   const addMedication = useAppStore((s) => s.addMedication);
   const updateMedication = useAppStore((s) => s.updateMedication);
   const syncMedicationId = useAppStore((s) => s.syncMedicationId);
@@ -54,7 +57,7 @@ export default function AddMedication() {
       router.back();
       return;
     }
-    const entry = addMedication(activePetId, name.trim(), finalDosage, finalSchedule, startDate, finalDurationDays);
+    const entry = addMedication(activePetId, name.trim(), finalDosage, finalSchedule, startDate, finalDurationDays, params.appointmentId);
     try {
       const remoteId = await insertMedication(activePetId, entry);
       syncMedicationId(activePetId, entry.id, remoteId);
@@ -73,6 +76,13 @@ export default function AddMedication() {
           <X size={16} color={colors.ink} />
         </Pressable>
       </View>
+
+      {!!forAppointment && (
+        <Text style={styles.forAppointment}>
+          Prescribed at the {new Date(forAppointment.date + "T00:00:00").toLocaleDateString([], { month: "short", day: "numeric" })} visit
+          {forAppointment.hospitalName ? ` · ${forAppointment.hospitalName}` : ""}
+        </Text>
+      )}
 
       {/* MEDICINE NAME */}
       <Text style={styles.label}>Medication name</Text>
@@ -192,6 +202,7 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 18 },
   title: { fontFamily: fonts.display, fontSize: 19, color: colors.ink },
   closeBtn: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 2, borderColor: colors.ink, padding: 6 },
+  forAppointment: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: colors.accentDeep, marginBottom: 14, marginTop: -6 },
   label: { fontFamily: fonts.labelBold, fontSize: 13.5, color: colors.ink, marginBottom: 8, marginTop: 10 },
   input: {
     borderWidth: 1.5, borderColor: colors.border, borderRadius: 12, backgroundColor: colors.surface,

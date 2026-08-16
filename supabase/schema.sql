@@ -38,6 +38,10 @@ alter table vet_appointments add column if not exists time text;
 alter table vet_appointments add column if not exists hospital_name text;
 alter table vet_appointments add column if not exists doctor_name text;
 alter table vet_appointments add column if not exists phone_no text;
+-- Per-visit medical record: what the vet found/diagnosed and any report
+-- notes, captured from the appointment's detail screen after the visit.
+alter table vet_appointments add column if not exists diagnosis text[];
+alter table vet_appointments add column if not exists diagnostic_notes text;
 
 create table if not exists medications (
   id uuid primary key default gen_random_uuid(),
@@ -52,6 +56,9 @@ create table if not exists medications (
 
 alter table medications add column if not exists start_date date;
 alter table medications add column if not exists duration_days int;
+-- Which appointment this medication was prescribed in, if any — lets the
+-- appointment detail screen show medications that came out of that visit.
+alter table medications add column if not exists appointment_id uuid references vet_appointments on delete set null;
 
 -- Superseded by `foods` below (a pet can now have several foods — e.g. one
 -- dry + one wet — instead of exactly one). Left in place, unused, so

@@ -83,6 +83,10 @@ export interface VetAppointment {
   phoneNo?: string;
   note: string;
   completed: boolean;
+  /** Diseases / conditions the vet identified during this specific visit. */
+  diagnosis?: string[];
+  /** Free-text findings from this visit — diagnostic report results, labs, etc. */
+  diagnosticNotes?: string;
 }
 
 export interface Medication {
@@ -94,6 +98,9 @@ export interface Medication {
   startDate: string;
   /** How many days the course runs, starting from startDate (inclusive). */
   durationDays: number;
+  /** Which vet appointment this was prescribed in, if any — lets the
+   *  appointment's detail page list medications that came out of that visit. */
+  appointmentId?: string;
 }
 
 export interface VetInfo {

@@ -48,6 +48,13 @@ interface AppState {
 
   addLog: (petId: string, foodId: string, grams: number, label: string) => FeedingLog;
   addRestock: (petId: string, foodId: string, grams: number, note: string) => StockEntry;
+  /** Adds a new food to an already-committed pet (post-onboarding). */
+  addFoodToPet: (petId: string, category: FoodCategory) => FoodItem;
+  updateFoodItem: (petId: string, foodId: string, patch: Partial<Omit<FoodItem, "id">>) => void;
+  removeFoodItem: (petId: string, foodId: string) => void;
+  /** Swaps a local-generated food id for the real Supabase-assigned one once
+   *  the insert succeeds, so later logs/restocks/deletes target the right row. */
+  syncFoodId: (petId: string, localId: string, remoteId: string) => void;
   addAppointment: (
     petId: string,
     date: string,
@@ -57,10 +64,21 @@ interface AppState {
     doctorName?: string,
     phoneNo?: string
   ) => VetAppointment;
-  addMedication: (petId: string, name: string, dosage: string, schedule: string, startDate: string, durationDays: number) => Medication;
+  addMedication: (
+    petId: string,
+    name: string,
+    dosage: string,
+    schedule: string,
+    startDate: string,
+    durationDays: number,
+    appointmentId?: string
+  ) => Medication;
   updateAppointment: (petId: string, appointmentId: string, patch: Partial<Omit<VetAppointment, "id">>) => void;
   updateMedication: (petId: string, medicationId: string, patch: Partial<Omit<Medication, "id">>) => void;
   setVaccinationStatus: (petId: string, name: string, done: boolean) => void;
+  /** Merges new tags into the pet's medicalTags, de-duplicated. Used to sync
+   *  conditions diagnosed at a vet visit into the pet's overall profile. */
+  addMedicalTags: (petId: string, tags: string[]) => void;
   removeAppointment: (petId: string, appointmentId: string) => void;
   removeMedication: (petId: string, medicationId: string) => void;
   /** Swaps a local-generated id for the real Supabase-assigned one once the
@@ -181,6 +199,46 @@ export const useAppStore = create<AppState>()(
         return entry;
       },
 
+      addFoodToPet: (petId, category) => {
+        const entry = makeEmptyFood(category);
+        const record = get().pets[petId];
+        if (!record) return entry;
+        set({
+          pets: { ...get().pets, [petId]: { ...record, foods: [...record.foods, entry] } },
+        });
+        return entry;
+      },
+
+      updateFoodItem: (petId, foodId, patch) => {
+        const record = get().pets[petId];
+        if (!record) return;
+        set({
+          pets: {
+            ...get().pets,
+            [petId]: { ...record, foods: record.foods.map((f) => (f.id === foodId ? { ...f, ...patch } : f)) },
+          },
+        });
+      },
+
+      removeFoodItem: (petId, foodId) => {
+        const record = get().pets[petId];
+        if (!record) return;
+        set({
+          pets: { ...get().pets, [petId]: { ...record, foods: record.foods.filter((f) => f.id !== foodId) } },
+        });
+      },
+
+      syncFoodId: (petId, localId, remoteId) => {
+        const record = get().pets[petId];
+        if (!record) return;
+        set({
+          pets: {
+            ...get().pets,
+            [petId]: { ...record, foods: record.foods.map((f) => (f.id === localId ? { ...f, id: remoteId } : f)) },
+          },
+        });
+      },
+
       addAppointment: (petId, date, note, time, hospitalName, doctorName, phoneNo) => {
         const entry: VetAppointment = {
           id: String(Date.now()),
@@ -203,8 +261,8 @@ export const useAppStore = create<AppState>()(
         return entry;
       },
 
-      addMedication: (petId, name, dosage, schedule, startDate, durationDays) => {
-        const entry: Medication = { id: String(Date.now()), name, dosage, schedule, startDate, durationDays };
+      addMedication: (petId, name, dosage, schedule, startDate, durationDays, appointmentId) => {
+        const entry: Medication = { id: String(Date.now()), name, dosage, schedule, startDate, durationDays, appointmentId };
         const record = get().pets[petId];
         if (!record) return entry;
         set({
@@ -251,6 +309,20 @@ export const useAppStore = create<AppState>()(
           pets: {
             ...get().pets,
             [petId]: { ...record, pet: { ...record.pet, vaccinations: { ...record.pet.vaccinations, [name]: done } } },
+          },
+        });
+      },
+
+      addMedicalTags: (petId, tags) => {
+        const record = get().pets[petId];
+        if (!record) return;
+        const clean = tags.map((t) => t.trim()).filter(Boolean);
+        if (clean.length === 0) return;
+        const merged = Array.from(new Set([...record.pet.medicalTags, ...clean]));
+        set({
+          pets: {
+            ...get().pets,
+            [petId]: { ...record, pet: { ...record.pet, medicalTags: merged } },
           },
         });
       },

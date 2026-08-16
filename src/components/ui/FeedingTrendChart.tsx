@@ -12,7 +12,7 @@ export type DailyBucket = {
   meals: number;
 };
 
-export type TrendMode = "dry" | "wet" | "total";
+export type TrendMode = "dry" | "wet";
 
 interface Props {
   buckets: DailyBucket[];
@@ -25,7 +25,6 @@ interface Props {
 const MODES: { id: TrendMode; label: string }[] = [
   { id: "dry", label: "Dry" },
   { id: "wet", label: "Wet" },
-  { id: "total", label: "Total" },
 ];
 
 const BAR_GAP = 8;
@@ -36,6 +35,10 @@ const PLOT_HEIGHT = 118;
 const DAY_LABEL_HEIGHT = 34;
 const STROKE = 1.5;
 const SELECTED_STROKE = 2.5;
+// Reserves room on the right of the plot so the last bar's border/selection
+// ring isn't clipped by the SVG's edge (strokes are centered on the path,
+// so they'd otherwise overrun the exact-width boundary).
+const PLOT_RIGHT_PADDING = 6;
 
 function gramsToY(grams: number, chartMax: number, plotBottom: number) {
   if (!chartMax) return plotBottom;
@@ -48,21 +51,15 @@ function formatTick(grams: number) {
 }
 
 function bucketGrams(bucket: DailyBucket, mode: TrendMode) {
-  if (mode === "dry") return bucket.dryGrams;
-  if (mode === "wet") return bucket.wetGrams;
-  return bucket.grams;
+  return mode === "dry" ? bucket.dryGrams : bucket.wetGrams;
 }
 
 function modeTarget(mode: TrendMode, dryTargetGrams: number, wetTargetGrams: number) {
-  if (mode === "dry") return dryTargetGrams;
-  if (mode === "wet") return wetTargetGrams;
-  return dryTargetGrams + wetTargetGrams;
+  return mode === "dry" ? dryTargetGrams : wetTargetGrams;
 }
 
 function modeBarColor(mode: TrendMode) {
-  if (mode === "dry") return colors.accent;
-  if (mode === "wet") return colors.sage;
-  return colors.accent;
+  return mode === "dry" ? colors.accent : colors.sage;
 }
 
 export function FeedingTrendChart({
@@ -73,13 +70,11 @@ export function FeedingTrendChart({
   wetTargetGrams,
 }: Props) {
   const [chartWidth, setChartWidth] = useState(0);
-  const [mode, setMode] = useState<TrendMode>(() =>
-    dryTargetGrams > 0 ? "dry" : wetTargetGrams > 0 ? "wet" : "total",
-  );
+  const [mode, setMode] = useState<TrendMode>(() => (dryTargetGrams > 0 ? "dry" : "wet"));
 
   const dailyTargetGrams = modeTarget(mode, dryTargetGrams, wetTargetGrams);
   const plotLeft = Y_AXIS_WIDTH;
-  const plotWidth = Math.max(chartWidth - plotLeft, 0);
+  const plotWidth = Math.max(chartWidth - plotLeft - PLOT_RIGHT_PADDING, 0);
   const plotBottom = TOP_PADDING + PLOT_HEIGHT;
   const svgHeight = plotBottom + DAY_LABEL_HEIGHT;
   const barCount = buckets.length || 1;
@@ -155,67 +150,6 @@ export function FeedingTrendChart({
                 const isSelected = isSameDate(bucket.date, selectedDate);
                 const grams = bucketGrams(bucket, mode);
                 const hasData = grams > 0;
-
-                if (mode === "total" && bucket.grams > 0) {
-                  const dryH = chartMax ? (bucket.dryGrams / chartMax) * PLOT_HEIGHT : 0;
-                  const wetH = chartMax ? (bucket.wetGrams / chartMax) * PLOT_HEIGHT : 0;
-                  const totalH = dryH + wetH;
-                  const wetY = plotBottom - wetH;
-                  const dryY = wetY - dryH;
-                  const stackTop = plotBottom - totalH;
-
-                  return (
-                    <React.Fragment key={index}>
-                      {isSelected && totalH > 0 && (
-                        <Rect
-                          x={x - 1.5}
-                          y={stackTop - 1.5}
-                          width={barWidth + 3}
-                          height={totalH + 1.5}
-                          rx={BAR_RADIUS + 1}
-                          fill="none"
-                          stroke={colors.accentDeep}
-                          strokeWidth={SELECTED_STROKE}
-                        />
-                      )}
-                      {bucket.wetGrams > 0 && (
-                        <Rect
-                          x={x}
-                          y={wetY}
-                          width={barWidth}
-                          height={wetH}
-                          rx={bucket.dryGrams > 0 ? 0 : BAR_RADIUS}
-                          fill={colors.sage}
-                          stroke={colors.ink}
-                          strokeWidth={STROKE}
-                        />
-                      )}
-                      {bucket.dryGrams > 0 && (
-                        <Rect
-                          x={x}
-                          y={dryY}
-                          width={barWidth}
-                          height={dryH}
-                          rx={BAR_RADIUS}
-                          fill={colors.accent}
-                          stroke={colors.ink}
-                          strokeWidth={STROKE}
-                        />
-                      )}
-                      <SvgText
-                        x={centerX}
-                        y={Math.max(stackTop - 6, TOP_PADDING + 10)}
-                        textAnchor="middle"
-                        fontSize={10.5}
-                        fontFamily={fonts.monoSemibold}
-                        fill={isSelected ? colors.accentDeep : colors.ink}
-                      >
-                        {`${bucket.grams}g`}
-                      </SvgText>
-                      {renderDayLabels(centerX, plotBottom, bucket.date, isSelected)}
-                    </React.Fragment>
-                  );
-                }
 
                 const barH = chartMax ? (grams / chartMax) * PLOT_HEIGHT : 0;
                 const barY = plotBottom - barH;
@@ -310,23 +244,10 @@ export function FeedingTrendChart({
           </View>
 
           <View style={styles.legendRow}>
-            {mode === "total" ? (
-              <>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: colors.accent }]} />
-                  <Text style={styles.legendText}>Dry</Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: colors.sage }]} />
-                  <Text style={styles.legendText}>Wet</Text>
-                </View>
-              </>
-            ) : (
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: modeBarColor(mode) }]} />
-                <Text style={styles.legendText}>{mode === "dry" ? "Dry fed" : "Wet fed"}</Text>
-              </View>
-            )}
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: modeBarColor(mode) }]} />
+              <Text style={styles.legendText}>{mode === "dry" ? "Dry fed" : "Wet fed"}</Text>
+            </View>
             {dailyTargetGrams > 0 && (
               <View style={styles.legendItem}>
                 <View style={[styles.legendLine, { borderColor: colors.accentDeep }]} />
