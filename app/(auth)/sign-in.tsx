@@ -1,16 +1,19 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Pressable, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from "react-native";
+import { View, Text, Image, StyleSheet, Pressable, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
-import { PawPrint, Mail } from "@/components/icons";
+import { Mail } from "@/components/icons";
 import { TextField } from "@/components/ui/TextField";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { NeoBox } from "@/components/ui/NeoBox";
 import { colors, fonts } from "@/theme/tokens";
 import { useAppStore } from "@/store/useAppStore";
 import { supabase } from "@/lib/supabase";
+
+const WELCOME_BACK_ILLUSTRATION = require("../../assets/illustrations/welcome-back.png");
+const LETS_GET_STARTED_ILLUSTRATION = require("../../assets/illustrations/lets-get-started.png");
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -84,9 +87,11 @@ export default function SignIn() {
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={styles.container}>
         <View style={styles.hero}>
-          <NeoBox depth={4} radius={20} style={styles.logoBox}>
-            <PawPrint color={colors.ink} size={32} />
-          </NeoBox>
+          <Image
+            source={mode === "signUp" ? LETS_GET_STARTED_ILLUSTRATION : WELCOME_BACK_ILLUSTRATION}
+            style={styles.heroIllustration}
+            resizeMode="contain"
+          />
           <Text style={styles.appName}>Bowlkeeper</Text>
           <Text style={styles.tagline}>Feed on schedule. Track every gram.</Text>
         </View>
@@ -138,10 +143,8 @@ export default function SignIn() {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.appBg },
   container: { flex: 1, paddingHorizontal: 24, justifyContent: "center" },
-  hero: { alignItems: "center", marginBottom: 44 },
-  logoBox: {
-    width: 68, height: 68, alignItems: "center", justifyContent: "center", backgroundColor: colors.accent, marginBottom: 18,
-  },
+  hero: { alignItems: "center", marginBottom: 32 },
+  heroIllustration: { width: 168, height: 148, marginBottom: 6 },
   appName: { fontFamily: fonts.display, fontSize: 28, color: colors.ink },
   tagline: { fontFamily: fonts.body, fontSize: 14, color: colors.inkSoft, marginTop: 8 },
   form: { width: "100%" },

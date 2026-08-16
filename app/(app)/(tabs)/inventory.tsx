@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Image } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Package, Plus, AlertCircle, MoreVertical } from "@/components/icons";
@@ -64,6 +64,7 @@ export default function Inventory() {
         {record.foods.length === 0 ? (
           <Pressable onPress={() => router.push("/(app)/add-food")}>
             <View style={styles.empty}>
+              <Image source={require("../../../assets/illustrations/no-data-box.png")} style={styles.emptyIllustration} resizeMode="contain" />
               <Text style={styles.emptyText}>No food set up yet for this pet.</Text>
               <Text style={styles.emptyTextSub}>Tap "Add a food" below to set one up.</Text>
             </View>
@@ -188,8 +189,9 @@ const styles = StyleSheet.create({
   addBtnLabel: { fontFamily: fonts.labelBold, color: colors.onAccent, fontSize: 14 },
   empty: {
     backgroundColor: colors.surface, borderRadius: 14, borderWidth: 2, borderColor: colors.ink,
-    borderStyle: "dashed", padding: 18,
+    borderStyle: "dashed", padding: 18, alignItems: "center",
   },
+  emptyIllustration: { width: 140, height: 118, marginBottom: 10 },
   emptyText: { color: colors.inkSoft, fontSize: 13.5, textAlign: "center", fontFamily: fonts.body },
   emptyTextSub: { color: colors.inkSoft, fontSize: 11.5, textAlign: "center", fontFamily: fonts.body, marginTop: 4 },
   row: {

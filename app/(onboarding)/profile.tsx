@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
+import { View, Text, Pressable, Image, StyleSheet, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { ChevronRight } from "@/components/icons";
 import { ScreenTitle } from "@/components/ui/ScreenTitle";
@@ -25,6 +25,11 @@ export default function ProfileStep() {
     <View style={styles.screen}>
       <NeoOnboardHeader step={1} total={9} />
       <ScrollView contentContainerStyle={styles.content}>
+        <Image
+          source={require("../../assets/illustrations/lets-get-started.png")}
+          style={styles.heroIllustration}
+          resizeMode="contain"
+        />
         <ScreenTitle title="Tell us about you" sub="This helps us personalize reminders and vet-visit notes." />
         <TextField
           label="Your name"
@@ -51,6 +56,7 @@ export default function ProfileStep() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.appBg },
   content: { paddingHorizontal: 24, paddingBottom: 32, flexGrow: 1 },
+  heroIllustration: { width: 150, height: 132, alignSelf: "center", marginBottom: 12 },
   signOut: { alignSelf: "flex-start", marginTop: 4 },
   signOutText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.inkSoft, textDecorationLine: "underline" },
   spacer: { flex: 1, minHeight: 12 },

@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, LayoutChangeEvent, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
+import { View, Text, Image, StyleSheet, ScrollView, Pressable, LayoutChangeEvent, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Plus, UtensilsCrossed, Clock3, Calendar, Pill } from "@/components/icons";
@@ -277,6 +277,7 @@ function CategoryRingPage({
       <Text style={styles.ringPageTitle}>{title}</Text>
       {catFoods.length === 0 ? (
         <View style={styles.noCategoryWrap}>
+          <Image source={require("../../../assets/illustrations/no-data-box.png")} style={styles.noCategoryIllustration} resizeMode="contain" />
           <Text style={styles.noCategoryText}>No {category} food set up for {petName || "this pet"} yet.</Text>
         </View>
       ) : (
@@ -352,7 +353,8 @@ const styles = StyleSheet.create({
   statsRow: { flexDirection: "row", gap: 28, marginTop: 16 },
   statValue: { fontFamily: fonts.monoSemibold, fontSize: 15 },
   statLabel: { fontSize: 11, color: colors.inkSoft, marginTop: 2 },
-  noCategoryWrap: { paddingVertical: 40, paddingHorizontal: 10 },
+  noCategoryWrap: { paddingVertical: 24, paddingHorizontal: 10, alignItems: "center" },
+  noCategoryIllustration: { width: 110, height: 92, marginBottom: 8 },
   noCategoryText: { fontFamily: fonts.body, fontSize: 13, color: colors.inkSoft, textAlign: "center" },
   perFoodWrap: { width: "100%", marginTop: 18, borderTopWidth: 2, borderTopColor: colors.ink, paddingTop: 12, gap: 8 },
   perFoodRow: { flexDirection: "row", alignItems: "center", gap: 8 },

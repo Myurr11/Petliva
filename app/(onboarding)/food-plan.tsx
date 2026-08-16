@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, StyleSheet, ScrollView, Pressable, Alert } from "react-native";
+import { View, Text, TextInput, Image, StyleSheet, ScrollView, Pressable, Alert } from "react-native";
 import { router } from "expo-router";
 import { ChevronRight, UtensilsCrossed, X, Plus } from "@/components/icons";
 import { ScreenTitle } from "@/components/ui/ScreenTitle";
@@ -106,6 +106,16 @@ export default function FoodPlanStep() {
         </View>
 
         <View style={styles.spacer} />
+        {saving && (
+          <View style={styles.savingRow}>
+            <Image
+              source={require("../../assets/illustrations/loading-corgi.png")}
+              style={styles.savingIllustration}
+              resizeMode="contain"
+            />
+            <Text style={styles.savingText}>Setting up {pet.name || "your pet"}'s profile…</Text>
+          </View>
+        )}
         <PrimaryButton
           label={saving ? "Saving…" : "Finish setup"}
           icon={ChevronRight}
@@ -140,4 +150,7 @@ const styles = StyleSheet.create({
   },
   addMoreLabel: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: colors.ink },
   spacer: { flex: 1, minHeight: 16 },
+  savingRow: { alignItems: "center", marginBottom: 12 },
+  savingIllustration: { width: 120, height: 100 },
+  savingText: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: colors.inkSoft, marginTop: 4 },
 });

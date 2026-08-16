@@ -1,8 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Image } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Syringe, Check, Calendar, Pill, Plus, Dog, Cat, CalendarPlus, MoreVertical, ChevronRight } from "@/components/icons";
+import { Syringe, Check, Calendar, Pill, Plus, Dog, Cat, MoreVertical, ChevronRight } from "@/components/icons";
 import { PetSwitcherHeader } from "@/components/ui/PetSwitcherHeader";
 import { NeoBox } from "@/components/ui/NeoBox";
 import { useAppStore } from "@/store/useAppStore";
@@ -148,9 +148,7 @@ export default function Vet() {
         {upcoming.length === 0 && past.length === 0 ? (
           <Pressable onPress={() => router.push("/(app)/add-appointment")}>
             <View style={styles.noApptCard}>
-              <View style={styles.noApptIconWrap}>
-                <CalendarPlus size={22} color={colors.inkSoft} />
-              </View>
+              <Image source={require("../../../assets/illustrations/sleepy-calendar.png")} style={styles.noApptIllustration} resizeMode="contain" />
               <Text style={styles.noApptTitle}>No appointments</Text>
               <Text style={styles.noApptSub}>Tap to add {record.pet.name}'s next vet visit</Text>
             </View>
@@ -352,6 +350,7 @@ const styles = StyleSheet.create({
     width: 44, height: 44, borderRadius: 999, backgroundColor: colors.surface,
     borderWidth: 2, borderColor: colors.ink, alignItems: "center", justifyContent: "center", marginBottom: 10,
   },
+  noApptIllustration: { width: 150, height: 130, marginBottom: 6 },
   noApptTitle: { fontFamily: fonts.bodySemibold, fontSize: 14.5, color: colors.ink },
   noApptSub: { fontFamily: fonts.body, fontSize: 12, color: colors.inkSoft, marginTop: 3 },
   emptyText: { color: colors.inkSoft, fontSize: 13, textAlign: "center", fontFamily: fonts.body },

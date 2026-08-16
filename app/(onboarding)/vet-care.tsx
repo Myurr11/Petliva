@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, StyleSheet, ScrollView } from "react-native";
+import { View, Text, TextInput, Image, StyleSheet, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { ChevronRight, Stethoscope, Calendar, Pill } from "@/components/icons";
 import { ScreenTitle } from "@/components/ui/ScreenTitle";
@@ -49,6 +49,11 @@ export default function VetCareStep() {
     <View style={styles.screen}>
       <NeoOnboardHeader step={8} total={9} />
       <ScrollView contentContainerStyle={styles.content}>
+        <Image
+          source={require("../../assets/illustrations/vet-checkup.png")}
+          style={styles.heroIllustration}
+          resizeMode="contain"
+        />
         <ScreenTitle title="Vet care" sub="This powers appointment and medication reminders — skip anything you don't know yet." />
 
         <View style={styles.rowLabel}>
@@ -96,6 +101,7 @@ export default function VetCareStep() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.appBg },
   content: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32, flexGrow: 1 },
+  heroIllustration: { width: 140, height: 116, alignSelf: "center", marginBottom: 8 },
   rowLabel: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
   label: { fontFamily: fonts.labelBold, fontSize: 14, color: colors.ink },
   wrap: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
