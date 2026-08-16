@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, Image, StyleSheet, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { ChevronRight } from "@/components/icons";
 import { ScreenTitle } from "@/components/ui/ScreenTitle";
@@ -19,6 +19,11 @@ export default function PetAgeStep() {
     <View style={styles.screen}>
       <NeoOnboardHeader step={4} total={9} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Image
+          source={require("../../assets/illustrations/age-birthday.png")}
+          style={styles.heroIllustration}
+          resizeMode="contain"
+        />
         <ScreenTitle
           title={`How old is ${pet.name || "your pet"}?`}
           sub="Enter their age in years. Decimals are welcome for younger pets."
@@ -45,5 +50,6 @@ export default function PetAgeStep() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.appBg },
   content: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32, flexGrow: 1 },
+  heroIllustration: { width: 150, height: 137, alignSelf: "center", marginBottom: 4 },
   spacer: { flex: 1, minHeight: 24 },
 });

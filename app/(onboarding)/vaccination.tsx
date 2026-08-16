@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import { View, Text, Image, StyleSheet, ScrollView, Pressable } from "react-native";
 import { router } from "expo-router";
 import { ChevronRight, Syringe, Check } from "@/components/icons";
 import { ScreenTitle } from "@/components/ui/ScreenTitle";
@@ -21,6 +21,11 @@ export default function VaccinationStep() {
     <View style={styles.screen}>
       <NeoOnboardHeader step={6} total={9} />
       <ScrollView contentContainerStyle={styles.content}>
+        <Image
+          source={require("../../assets/illustrations/vaccine-shield.png")}
+          style={styles.heroIllustration}
+          resizeMode="contain"
+        />
         <ScreenTitle title="Vaccination status" sub="Mark what's completed. You can add dates and boosters later from the Vet tab." />
         <View style={styles.list}>
           {core.map((v) => {
@@ -52,6 +57,7 @@ export default function VaccinationStep() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.appBg },
   content: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32, flexGrow: 1 },
+  heroIllustration: { width: 132, height: 110, alignSelf: "center", marginBottom: 4 },
   list: { gap: 10 },
   item: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",

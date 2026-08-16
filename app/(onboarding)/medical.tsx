@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TextInput, StyleSheet, ScrollView } from "react-native";
+import { View, Text, TextInput, Image, StyleSheet, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { ChevronRight, FileText } from "@/components/icons";
 import { ScreenTitle } from "@/components/ui/ScreenTitle";
@@ -25,6 +25,11 @@ export default function MedicalStep() {
     <View style={styles.screen}>
       <NeoOnboardHeader step={7} total={9} />
       <ScrollView contentContainerStyle={styles.content}>
+        <Image
+          source={require("../../assets/illustrations/medical-history.png")}
+          style={styles.heroIllustration}
+          resizeMode="contain"
+        />
         <ScreenTitle title="Any medical history?" sub="Optional — skip this if nothing applies. You can always add it later." />
         <View style={styles.wrap}>
           {MEDICAL_TAGS.map((t) => (
@@ -51,6 +56,7 @@ export default function MedicalStep() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.appBg },
   content: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32, flexGrow: 1 },
+  heroIllustration: { width: 150, height: 113, alignSelf: "center", marginBottom: 4 },
   wrap: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 18 },
   label: { fontFamily: fonts.labelBold, fontSize: 14, color: colors.ink, marginBottom: 8 },
   textarea: {

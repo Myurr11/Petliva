@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, StyleSheet, Pressable } from "react-native";
+import { View, Text, TextInput, Image, StyleSheet, Pressable } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { X } from "@/components/icons";
@@ -54,7 +54,17 @@ export default function AddRestock() {
         </Pressable>
       </View>
 
-      {!!foodName && <Text style={styles.forFood}>For {foodName}</Text>}
+      {!!foodName && (
+        <View style={styles.forFoodPill}>
+          <Text style={styles.forFoodPillText}>For {foodName}</Text>
+        </View>
+      )}
+
+      <Image
+        source={require("../../assets/illustrations/food-restock.png")}
+        style={styles.heroIllustration}
+        resizeMode="contain"
+      />
 
       <Text style={styles.label}>Quick sizes</Text>
       <View style={styles.chipRow}>
@@ -95,7 +105,12 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 18 },
   title: { fontFamily: fonts.display, fontSize: 19, color: colors.ink },
   closeBtn: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 2, borderColor: colors.ink, padding: 6 },
-  forFood: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.inkSoft, marginBottom: 16 },
+  forFoodPill: {
+    alignSelf: "center", backgroundColor: colors.accent, borderRadius: 999,
+    borderWidth: 2, borderColor: colors.ink, paddingVertical: 6, paddingHorizontal: 14, marginBottom: 4,
+  },
+  forFoodPillText: { fontFamily: fonts.labelBold, fontSize: 12, color: colors.ink },
+  heroIllustration: { width: 170, height: 170, alignSelf: "center", marginTop: 4, marginBottom: 16 },
   label: { fontFamily: fonts.labelBold, fontSize: 14, color: colors.ink, marginBottom: 8, marginTop: 4 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 18 },
   input: {

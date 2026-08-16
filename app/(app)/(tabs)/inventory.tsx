@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Image } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Package, Plus, AlertCircle, MoreVertical } from "@/components/icons";
+import { Plus, AlertCircle, MoreVertical } from "@/components/icons";
 import { PetSwitcherHeader } from "@/components/ui/PetSwitcherHeader";
 import { NeoBox } from "@/components/ui/NeoBox";
 import { useAppStore } from "@/store/useAppStore";
@@ -119,7 +119,15 @@ function FoodStockCard({
       </View>
 
       <NeoBox depth={4} radius={24} style={styles.card}>
-        <Package size={26} color={low ? colors.rose : colors.ink} />
+        <Image
+          source={
+            food.category === "dry"
+              ? require("../../../assets/illustrations/dry-food-stock.png")
+              : require("../../../assets/illustrations/wet-food-stock.png")
+          }
+          style={styles.stockIllustration}
+          resizeMode="contain"
+        />
         <Text style={styles.remaining}>{remaining}g</Text>
         <Text style={styles.remainingLabel}>remaining in stock</Text>
         {daysLeft !== null ? (
@@ -174,6 +182,7 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center", backgroundColor: colors.surface,
   },
   card: { paddingVertical: 24, alignItems: "center", marginBottom: 14, gap: 4 },
+  stockIllustration: { width: 50, height: 51},
   remaining: { fontFamily: fonts.monoSemibold, fontSize: 30, color: colors.ink, marginTop: 6 },
   remainingLabel: { fontFamily: fonts.body, fontSize: 12, color: colors.inkSoft, marginBottom: 8 },
   daysPill: {

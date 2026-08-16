@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TextInput, StyleSheet, ScrollView, Pressable } from "react-native";
+import { View, Text, TextInput, Image, StyleSheet, ScrollView, Pressable } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ChevronLeft, ChevronRight, Dog, Cat } from "@/components/icons";
@@ -35,6 +35,11 @@ export default function PetTypeStep() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Image
+          source={require("../../assets/illustrations/feeding-who.png")}
+          style={styles.heroIllustration}
+          resizeMode="contain"
+        />
         <View style={styles.titleWrap}>
           <Text style={styles.title}>Who are we feeding?</Text>
           <Text style={styles.sub}>Tell us a bit about your companion so we can tailor their experience.</Text>
@@ -94,6 +99,7 @@ const styles = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 999, backgroundColor: colors.track, borderWidth: 1.5, borderColor: colors.ink },
   dotActive: { backgroundColor: colors.accent, width: 16 },
   content: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40 },
+  heroIllustration: { width: 150, height: 143, alignSelf: "center", marginBottom: 8 },
   titleWrap: { alignItems: "center", marginBottom: 32 },
   title: { fontFamily: fonts.headlineLg, fontSize: 28, color: colors.ink, textAlign: "center", marginBottom: 10 },
   sub: { fontFamily: fonts.body, fontSize: 15, color: colors.inkSoft, textAlign: "center", lineHeight: 22 },

@@ -8,7 +8,7 @@ import { colors, fonts } from "@/theme/tokens";
 function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
-  const barWidth = Math.min(Math.max(screenWidth - 40, 280), 520);
+  const barWidth = Math.min(Math.max(screenWidth - 40, 280), 300);
 
   return (
     <View
@@ -18,10 +18,10 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
       <View
         style={{
           width: barWidth,
-          height: 54,
+          height: 70,
           flexDirection: "row",
           alignItems: "center",
-          paddingHorizontal: 6,
+          paddingHorizontal: 5,
           paddingVertical: 6,
           borderRadius: 999,
           backgroundColor: colors.ink,
@@ -29,14 +29,14 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           shadowOffset: { width: 0, height: 6 },
           shadowOpacity: 0.25,
           shadowRadius: 12,
-          elevation: 10,
+          elevation: 12,
         }}
       >
         {state.routes.map((route, index) => {
           const options = descriptors[route.key].options;
           const focused = state.index === index;
           const label = typeof options.tabBarLabel === "string" ? options.tabBarLabel : options.title ?? route.name;
-          const icon = options.tabBarIcon?.({ focused, color: focused ? colors.accent : "#8A8078", size: 19 });
+          const icon = options.tabBarIcon?.({ focused, color: focused ? colors.accent : "#8A8078", size: 22 });
 
           return (
             <TouchableOpacity

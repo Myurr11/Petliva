@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import { View, Text, Image, StyleSheet, ScrollView, Pressable } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ChevronLeft, Calendar, MoreVertical } from "@/components/icons";
@@ -28,7 +28,14 @@ export default function AppointmentHistory() {
         <Text style={styles.sub}>{record?.pet.name ? `${record.pet.name}'s past visits` : "Past visits"}</Text>
 
         {past.length === 0 ? (
-          <Text style={styles.emptyText}>No past appointments yet.</Text>
+          <View style={styles.empty}>
+            <Image
+              source={require("../../assets/illustrations/medical-record.png")}
+              style={styles.emptyIllustration}
+              resizeMode="contain"
+            />
+            <Text style={styles.emptyText}>No past appointments yet.</Text>
+          </View>
         ) : (
           <View style={{ gap: 10 }}>
             {past.map((a) => (
@@ -69,7 +76,9 @@ const styles = StyleSheet.create({
   iconBtn: { width: 36, height: 36, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 2, borderColor: colors.ink, alignItems: "center", justifyContent: "center" },
   title: { fontFamily: fonts.display, fontSize: 18, color: colors.ink },
   sub: { fontFamily: fonts.body, fontSize: 13, color: colors.inkSoft, marginBottom: 20, marginTop: 4 },
-  emptyText: { color: colors.inkSoft, fontSize: 13.5, textAlign: "center", fontFamily: fonts.body, marginTop: 30 },
+  empty: { alignItems: "center", marginTop: 20 },
+  emptyIllustration: { width: 120, height: 100, marginBottom: 8 },
+  emptyText: { color: colors.inkSoft, fontSize: 13.5, textAlign: "center", fontFamily: fonts.body },
   apptRow: {
     flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: 14,
     backgroundColor: colors.surface, borderWidth: 2, borderColor: colors.ink,

@@ -188,10 +188,10 @@ const styles = StyleSheet.create({
   tickMajor: { width: 3, height: 40 },
   tickMinor: { width: 2, height: 20 },
   tickLabel: {
-    position: "absolute", top: 46, width: 30, marginLeft: -15, textAlign: "center",
+    position: "absolute", top: 46, width: 30, marginLeft: -1, textAlign: "center",
     fontFamily: fonts.headlineMd, fontSize: 13, color: colors.ink,
   },
-  pointerWrap: { position: "absolute", left: "50%", top: 0, marginLeft: -1, alignItems: "center" },
+  pointerWrap: { position: "absolute", left: "50%", top: 0, width: 18, marginLeft: -9, alignItems: "center" },
   pointerTriangle: {
     width: 0, height: 0, borderLeftWidth: 9, borderRightWidth: 9, borderTopWidth: 12,
     borderLeftColor: "transparent", borderRightColor: "transparent", borderTopColor: colors.accent,

@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, Image, StyleSheet, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { ChevronRight } from "@/components/icons";
 import { ScreenTitle } from "@/components/ui/ScreenTitle";
@@ -19,6 +19,11 @@ export default function PetBreedStep() {
     <View style={styles.screen}>
       <NeoOnboardHeader step={3} total={9} />
       <ScrollView contentContainerStyle={styles.content}>
+        <Image
+          source={require("../../assets/illustrations/breed-select.png")}
+          style={styles.heroIllustration}
+          resizeMode="contain"
+        />
         <ScreenTitle
           title={`What breed is ${pet.name || "your pet"}?`}
           sub={`Common ${pet.type === "dog" ? "dog" : "cat"} breeds — pick the closest match.`}
@@ -43,6 +48,7 @@ export default function PetBreedStep() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.appBg },
   content: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32, flexGrow: 1 },
+  heroIllustration: { width: 150, height: 137, alignSelf: "center", marginBottom: 4 },
   wrap: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   spacer: { flex: 1, minHeight: 24 },
 });

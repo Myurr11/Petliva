@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, Image, StyleSheet, Pressable } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ChevronLeft, ChevronRight } from "@/components/icons";
@@ -38,6 +38,11 @@ export default function PetWeightStep() {
       </View>
 
       <View style={styles.content}>
+        <Image
+          source={require("../../assets/illustrations/weight-scale.png")}
+          style={styles.heroIllustration}
+          resizeMode="contain"
+        />
         <View style={styles.titleWrap}>
           <Text style={styles.title}>What's their current weight?</Text>
           <Text style={styles.sub}>This helps us calculate the perfect portion size.</Text>
@@ -72,7 +77,8 @@ const styles = StyleSheet.create({
   dots: { flexDirection: "row", gap: 6 },
   dot: { width: 8, height: 8, borderRadius: 999, backgroundColor: colors.track, borderWidth: 1.5, borderColor: colors.ink },
   dotActive: { backgroundColor: colors.accent, width: 16 },
-  content: { flex: 1, paddingHorizontal: 20, paddingTop: 20, justifyContent: "center" },
+  content: { flex: 1, paddingHorizontal: 20, paddingTop: 16 },
+  heroIllustration: { width: 136, height: 112, alignSelf: "center", marginBottom: 4 },
   titleWrap: { alignItems: "center", marginBottom: 36 },
   title: { fontFamily: fonts.headlineLg, fontSize: 24, color: colors.ink, textAlign: "center", marginBottom: 8 },
   sub: { fontFamily: fonts.body, fontSize: 14, color: colors.inkSoft, textAlign: "center" },
