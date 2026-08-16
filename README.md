@@ -3,6 +3,72 @@
 Expo Router app matching the onboarding + feeding-log flow we prototyped, now
 wired to a real Supabase backend.
 
+## Screenshots
+
+Captured on-device via Expo Go, in the order they appear in the actual flow: sign up → login → onboarding → home → food logging → insights → vet (+ vet-related screens) → food (+ food-related screens) → profile.
+
+### Auth
+
+<table><tr>
+<td align="center"><img src="docs/screenshots/01-signup.jpg" width="200"/><br/>Sign up</td>
+<td align="center"><img src="docs/screenshots/02-login.jpg" width="200"/><br/>Log in</td>
+</tr></table>
+
+### Onboarding (7 steps)
+
+<table><tr>
+<td align="center"><img src="docs/screenshots/03-onboarding-profile.jpg" width="180"/><br/>1. Name & type</td>
+<td align="center"><img src="docs/screenshots/04-onboarding-breed.jpg" width="180"/><br/>2. Breed</td>
+<td align="center"><img src="docs/screenshots/05-onboarding-age.jpg" width="180"/><br/>3. Age</td>
+<td align="center"><img src="docs/screenshots/06-onboarding-weight.jpg" width="180"/><br/>4. Weight</td>
+</tr><tr>
+<td align="center"><img src="docs/screenshots/07-onboarding-vaccinations.jpg" width="180"/><br/>5. Vaccinations</td>
+<td align="center"><img src="docs/screenshots/08-onboarding-medical-history.jpg" width="180"/><br/>6. Medical history</td>
+<td align="center"><img src="docs/screenshots/09-onboarding-vet-care.jpg" width="180"/><br/>7. Vet care</td>
+<td></td>
+</tr></table>
+
+### Home
+
+<table><tr>
+<td align="center"><img src="docs/screenshots/10-home-dry-food.jpg" width="200"/><br/>Dry food ring + reminders</td>
+<td align="center"><img src="docs/screenshots/11-home-wet-food.jpg" width="200"/><br/>Wet food ring (swipe page)</td>
+</tr></table>
+
+### Food logging
+
+<table><tr>
+<td align="center"><img src="docs/screenshots/12-log-a-feeding.jpg" width="200"/><br/>Log a feeding</td>
+</tr></table>
+
+### Insights
+
+<table><tr>
+<td align="center"><img src="docs/screenshots/13-insights.jpg" width="200"/><br/>7-day chart + calendar + daily progress</td>
+</tr></table>
+
+### Vet
+
+<table><tr>
+<td align="center"><img src="docs/screenshots/14-vet-tab.jpg" width="200"/><br/>Vet tab overview</td>
+<td align="center"><img src="docs/screenshots/15-add-vet-appointment.jpg" width="200"/><br/>Add appointment</td>
+<td align="center"><img src="docs/screenshots/16-add-medication.jpg" width="200"/><br/>Add medication</td>
+<td align="center"><img src="docs/screenshots/17-vet-visit-detail.jpg" width="200"/><br/>Visit detail (diagnosis/notes)</td>
+</tr></table>
+
+### Food
+
+<table><tr>
+<td align="center"><img src="docs/screenshots/18-food-tab.jpg" width="200"/><br/>Inventory + stock</td>
+<td align="center"><img src="docs/screenshots/19-log-a-restock.jpg" width="200"/><br/>Log a restock</td>
+</tr></table>
+
+### Profile
+
+<table><tr>
+<td align="center"><img src="docs/screenshots/20-profile.jpg" width="200"/><br/>Pets, health summary, sign out</td>
+</tr></table>
+
 ## Requirements
 - **Node.js ≥ 20.19.4** (Expo SDK 54's minimum — check with `node -v`; use `nvm use 20.19.4` if needed)
 - Expo SDK 54, pinned to the exact versions its own compatibility check reports as expected: `react@19.1.0`, `react-dom@19.1.0`, `react-native@0.81.5`, `babel-preset-expo@~54.0.10`. If you ever see Metro print a "should be updated for best compatibility" list on startup, **trust that list over any version number in this README** — it's read directly from your installed `expo` package, which is the actual source of truth and updates more often than this file can.
@@ -96,7 +162,7 @@ Full app reskin, neo-brutalist: warm cream background (`#FCF9F8`), thick 2px bla
 ## Deleting appointments & medications
 - **Vet tab**: every appointment and medication now has a trash icon. Tapping it confirms, then removes it from the device immediately and best-effort deletes it from Supabase too.
 - **The ID-sync fix this needed**: appointments and medications were being created with a local, client-generated id (`Date.now()`-based) that was never reconciled with the real id Supabase assigns on insert — so a delete-by-id call would silently target nothing. `insertAppointment`/`insertMedication` now return the real Supabase id, and `add-appointment.tsx`/`add-medication.tsx` swap the local id for it right after a successful write (`syncAppointmentId`/`syncMedicationId` in the store). Entries added before this fix won't have a matching remote row under their local id — deleting them locally still works fine, the Supabase-side delete for those specific old entries is just a no-op.
-- **Why deleted Supabase rows didn't disappear from the app before this**: the app only ever reads appointments/medications from local on-device storage, never re-fetches from Supabase — so removing rows directly in the Supabase dashboard has no effect on what's already cached on a phone. This is still true for every other entity too (see "Reading logs back from Supabase" below) — deleting from the app itself (now possible) is the reliable way to remove something, not editing the database directly.
+- **Why deleted Supabase rows didn't disappear from the app before this**: at the time, the app only ever read appointments/medications from local on-device storage and never re-fetched from Supabase — so removing rows directly in the Supabase dashboard had no effect on what was already cached on a phone. That's since been fixed (see "Reading logs/appointments/medications back from Supabase" below): the app now re-pulls everything from Supabase on sign-in and app launch, so a dashboard-side delete *will* disappear from the app the next time it hydrates. Deleting from the app itself is still the more direct route day-to-day.
 
 ## Medication courses (start date + duration)
 Medications now have a real prescribed date range instead of showing forever:
@@ -139,7 +205,7 @@ A pet can now have several foods instead of exactly one — typically one dry + 
 
 ## What's still stubbed / next steps
 - **Store migration note**: `useAppStore.ts` is now on persisted-state version 3. Two migrations run automatically and in order on first launch after updating — v1→v2 recovers pre-multi-pet data into the `pets{}` map, and v2→v3 backfills an empty `vet{}` object onto any pet record that predates the Vet feature. Both are one-time and automatic; you shouldn't need to redo onboarding.
-- **Reading logs/appointments/medications back from Supabase**: the app reads from the local Zustand cache only — it writes to Supabase but never reads history back. Fine on one device; multi-device sync would need a `fetchPetsAndLogs()` call on app start.
+- **Reading logs/appointments/medications back from Supabase**: fixed — `fetchUserPetRecords()` in `src/lib/supabase.ts` re-fetches every pet, food, log, restock, appointment, and medication for the signed-in user, and `hydrateFromServer()` rebuilds the local Zustand cache from it. This runs on sign-in and on every app launch/session restore (`app/_layout.tsx`), so a second device signing into the same account sees the same data, and a sign-out-then-sign-in on the same device no longer loses access to an already-onboarded account. Two devices editing at the *same moment* can still show stale data on one of them until its next hydrate — there's no live/realtime sync yet, just a fresh pull on each app open.
 - **Notifications**: no reminder for missed meals, upcoming vet appointments, or medication schedules yet — a natural next feature via `expo-notifications`, now that the underlying data (appointments, medication schedules) exists to schedule off of.
 - **Editing/deleting** appointments and medications isn't built yet — you can add, but not yet edit or remove, an entry.
 - **Retry queue** for anything that fails to sync while offline.

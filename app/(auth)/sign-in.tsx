@@ -112,6 +112,8 @@ export default function SignIn() {
             style={styles.heroIllustration}
             resizeMode="contain"
           />
+          <Text style={styles.appName}>Bowlkeeper</Text>
+          <Text style={styles.tagline}>Feed on schedule. Track every gram.</Text>
         </View>
 
         <View style={styles.form}>
@@ -162,7 +164,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.appBg },
   container: { flex: 1, paddingHorizontal: 24, justifyContent: "center" },
   hero: { alignItems: "center", marginBottom: 32 },
-  heroIllustration: { width: 220, height: 200, marginBottom: 0 },
+  heroIllustration: { width: 168, height: 148, marginBottom: 6 },
   appName: { fontFamily: fonts.display, fontSize: 28, color: colors.ink },
   tagline: { fontFamily: fonts.body, fontSize: 14, color: colors.inkSoft, marginTop: 8 },
   form: { width: "100%" },
