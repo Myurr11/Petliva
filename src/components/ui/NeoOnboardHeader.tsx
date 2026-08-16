@@ -11,14 +11,25 @@ import { colors } from "@/theme/tokens";
  *
  *  These onboarding screens don't use SafeAreaView (their content usually
  *  scrolls edge-to-edge behind this header), so the header pads itself for
- *  the status bar / notch instead — otherwise it renders underneath it. */
+ *  the status bar / notch instead — otherwise it renders underneath it.
+ *
+ *  The very first onboarding step (profile) is reached via router.replace()
+ *  right after sign-in, so there's no screen behind it to go back to —
+ *  tapping back there would throw "GO_BACK not handled". Rather than crash
+ *  or silently no-op, hide the back button whenever there's nothing to
+ *  return to, and keep the dots centered with an equal-width spacer. */
 export function NeoOnboardHeader({ step, total }: { step: number; total: number }) {
   const insets = useSafeAreaInsets();
+  const canGoBack = router.canGoBack();
   return (
     <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-      <Pressable onPress={() => router.back()} style={styles.backBtn}>
-        <ChevronLeft size={20} color={colors.ink} />
-      </Pressable>
+      {canGoBack ? (
+        <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <ChevronLeft size={20} color={colors.ink} />
+        </Pressable>
+      ) : (
+        <View style={styles.backBtn} />
+      )}
       <View style={styles.dots}>
         {Array.from({ length: total }).map((_, i) => (
           <View key={i} style={[styles.dot, i === step - 1 && styles.dotActive]} />

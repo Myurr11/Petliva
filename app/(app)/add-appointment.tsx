@@ -8,6 +8,7 @@ import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
 import { insertAppointment, updateAppointment as updateRemoteAppointment } from "@/lib/supabase";
+import { safeBack } from "@/lib/navigation";
 
 const TIME_PRESETS = ["09:00 AM", "10:30 AM", "02:00 PM", "04:30 PM", "Custom"];
 
@@ -44,7 +45,7 @@ export default function AddAppointment() {
         // The local edit is retained while the device is offline.
       }
       setSaving(false);
-      router.back();
+      safeBack("/(app)/(tabs)/vet");
       return;
     }
     const entry = addAppointment(activePetId, date.trim(), note.trim(), finalTime, hospitalName.trim(), doctorName.trim(), phoneNo.trim());
@@ -58,7 +59,7 @@ export default function AddAppointment() {
       // never sync to Supabase until the app supports a retry queue
     }
     setSaving(false);
-    router.back();
+    safeBack("/(app)/(tabs)/vet");
   }
 
   return (
@@ -66,7 +67,7 @@ export default function AddAppointment() {
       <ScrollView contentContainerStyle={styles.sheet}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>{appointment ? "Edit vet appointment" : "Add vet appointment"}</Text>
-          <Pressable onPress={() => router.back()} style={styles.closeBtn}>
+          <Pressable onPress={() => safeBack("/(app)/(tabs)/vet")} style={styles.closeBtn}>
             <X size={16} color={colors.ink} />
           </Pressable>
         </View>

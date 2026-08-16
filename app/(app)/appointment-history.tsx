@@ -6,6 +6,7 @@ import { ChevronLeft, Calendar, MoreVertical } from "@/components/icons";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
 import { isAppointmentPast } from "@/lib/appointmentTime";
+import { safeBack } from "@/lib/navigation";
 
 export default function AppointmentHistory() {
   const record = useAppStore((s) => (s.activePetId ? s.pets[s.activePetId] : undefined));
@@ -18,7 +19,7 @@ export default function AppointmentHistory() {
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.topRow}>
-          <Pressable onPress={() => router.back()} style={styles.iconBtn}>
+          <Pressable onPress={() => safeBack("/(app)/(tabs)/vet")} style={styles.iconBtn}>
             <ChevronLeft size={20} color={colors.ink} />
           </Pressable>
           <Text style={styles.title}>Appointment history</Text>

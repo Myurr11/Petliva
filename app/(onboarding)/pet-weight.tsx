@@ -12,6 +12,7 @@ export default function PetWeightStep() {
   const pet = useAppStore((s) => s.pet);
   const setPet = useAppStore((s) => s.setPet);
   const [weightKg, setWeightKg] = useState(Number(pet.weightKg) || 5);
+  const canGoBack = router.canGoBack();
 
   function handleChange(kg: number) {
     setWeightKg(kg);
@@ -21,9 +22,13 @@ export default function PetWeightStep() {
   return (
     <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <ChevronLeft size={20} color={colors.ink} />
-        </Pressable>
+        {canGoBack ? (
+          <Pressable onPress={() => router.back()} style={styles.backBtn}>
+            <ChevronLeft size={20} color={colors.ink} />
+          </Pressable>
+        ) : (
+          <View style={styles.backBtn} />
+        )}
         <View style={styles.dots}>
           {Array.from({ length: 9 }).map((_, i) => (
             <View key={i} style={[styles.dot, i === 4 && styles.dotActive]} />

@@ -7,6 +7,7 @@ import { NeoBox } from "@/components/ui/NeoBox";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
 import { supabase } from "@/lib/supabase";
+import { safeBack } from "@/lib/navigation";
 
 export default function Profile() {
   const user = useAppStore((s) => s.user);
@@ -45,7 +46,7 @@ export default function Profile() {
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.topRow}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <Pressable onPress={() => safeBack("/(app)/(tabs)/home")} style={styles.backBtn}>
             <ChevronLeft size={20} color={colors.ink} />
           </Pressable>
           <Text style={styles.title}>Profile</Text>

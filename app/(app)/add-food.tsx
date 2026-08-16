@@ -9,6 +9,7 @@ import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
 import { insertFood, updateFood as updateRemoteFood } from "@/lib/supabase";
+import { safeBack } from "@/lib/navigation";
 import type { FoodCategory, FoodItem } from "@/types";
 
 export default function AddFood() {
@@ -47,7 +48,7 @@ export default function AddFood() {
         // local edit is retained while offline
       }
       setSaving(false);
-      router.back();
+      safeBack("/(app)/(tabs)/inventory");
       return;
     }
     const entry = addFoodToPet(activePetId, draft.category);
@@ -60,7 +61,7 @@ export default function AddFood() {
       // offline-first fallback — entry stays with its local id
     }
     setSaving(false);
-    router.back();
+    safeBack("/(app)/(tabs)/inventory");
   }
 
   return (
@@ -68,7 +69,7 @@ export default function AddFood() {
       <ScrollView contentContainerStyle={styles.sheet}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>{existing ? "Edit food" : "Add food"}</Text>
-          <Pressable onPress={() => router.back()} style={styles.closeBtn}>
+          <Pressable onPress={() => safeBack("/(app)/(tabs)/inventory")} style={styles.closeBtn}>
             <X size={16} color={colors.ink} />
           </Pressable>
         </View>

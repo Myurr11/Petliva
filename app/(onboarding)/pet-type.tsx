@@ -11,6 +11,7 @@ import type { PetType } from "@/types";
 export default function PetTypeStep() {
   const pet = useAppStore((s) => s.pet);
   const setPet = useAppStore((s) => s.setPet);
+  const canGoBack = router.canGoBack();
 
   const select = (type: PetType) => setPet({ type, breed: "" });
   const canContinue = !!pet.name && !!pet.type;
@@ -18,9 +19,13 @@ export default function PetTypeStep() {
   return (
     <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <ChevronLeft size={20} color={colors.ink} />
-        </Pressable>
+        {canGoBack ? (
+          <Pressable onPress={() => router.back()} style={styles.backBtn}>
+            <ChevronLeft size={20} color={colors.ink} />
+          </Pressable>
+        ) : (
+          <View style={styles.backBtn} />
+        )}
         <View style={styles.dots}>
           {Array.from({ length: 9 }).map((_, i) => (
             <View key={i} style={[styles.dot, i === 1 && styles.dotActive]} />

@@ -9,6 +9,7 @@ import { toISODate } from "@/components/ui/CalendarGrid";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
 import { insertMedication, updateMedication as updateRemoteMedication } from "@/lib/supabase";
+import { safeBack } from "@/lib/navigation";
 
 const DOSAGE_PRESETS = ["1 tablet", "0.5 tablet", "5 ml", "10 mg", "Custom"];
 const SCHEDULE_PRESETS = ["Once daily", "Twice daily", "Every 8 hours", "With food", "Custom"];
@@ -55,7 +56,7 @@ export default function AddMedication() {
         // The local edit is retained while the device is offline.
       }
       setSaving(false);
-      router.back();
+      safeBack("/(app)/(tabs)/vet");
       return;
     }
     const entry = addMedication(activePetId, name.trim(), finalDosage, finalSchedule, startDate, finalDurationDays, params.appointmentId);
@@ -66,7 +67,7 @@ export default function AddMedication() {
       // offline-first fallback — entry stays with its local id
     }
     setSaving(false);
-    router.back();
+    safeBack("/(app)/(tabs)/vet");
   }
 
   return (
@@ -74,7 +75,7 @@ export default function AddMedication() {
     <ScrollView contentContainerStyle={styles.sheet}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>{medication ? "Edit medication" : "Add medication"}</Text>
-        <Pressable onPress={() => router.back()} style={styles.closeBtn}>
+        <Pressable onPress={() => safeBack("/(app)/(tabs)/vet")} style={styles.closeBtn}>
           <X size={16} color={colors.ink} />
         </Pressable>
       </View>

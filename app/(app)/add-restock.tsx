@@ -8,6 +8,7 @@ import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
 import { insertRestock } from "@/lib/supabase";
+import { safeBack } from "@/lib/navigation";
 
 const QUICK_SIZES = [
   { label: "1 kg", grams: 1000 },
@@ -40,7 +41,7 @@ export default function AddRestock() {
       // local entry still counts; same offline-first pattern as feeding logs
     }
     setSaving(false);
-    router.back();
+    safeBack("/(app)/(tabs)/inventory");
   }
 
   return (
@@ -48,7 +49,7 @@ export default function AddRestock() {
     <View style={styles.sheet}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>Log a restock</Text>
-        <Pressable onPress={() => router.back()} style={styles.closeBtn}>
+        <Pressable onPress={() => safeBack("/(app)/(tabs)/inventory")} style={styles.closeBtn}>
           <X size={16} color={colors.ink} />
         </Pressable>
       </View>

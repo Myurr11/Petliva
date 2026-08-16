@@ -10,6 +10,7 @@ import { NeoBox } from "@/components/ui/NeoBox";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
 import { isAppointmentPast } from "@/lib/appointmentTime";
+import { safeBack } from "@/lib/navigation";
 import {
   deleteAppointment, updateAppointment as updateRemoteAppointment,
   updateMedicalTags, deleteMedication,
@@ -99,7 +100,7 @@ export default function AppointmentDetail() {
           } catch {
             // best-effort remote delete, same pattern as elsewhere in the app
           }
-          router.back();
+          router.canGoBack() ? router.back() : router.replace("/(app)/(tabs)/vet");
         },
       },
     ]);
@@ -127,7 +128,7 @@ export default function AppointmentDetail() {
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.topRow}>
-          <Pressable onPress={() => router.back()} style={styles.iconBtn}>
+          <Pressable onPress={() => safeBack("/(app)/(tabs)/vet")} style={styles.iconBtn}>
             <ChevronLeft size={20} color={colors.ink} />
           </Pressable>
           <Text style={styles.title} numberOfLines={1}>{petName ? `${petName}'s visit` : "Visit"}</Text>

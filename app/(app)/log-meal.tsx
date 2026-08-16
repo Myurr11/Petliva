@@ -10,6 +10,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { MEAL_LABELS } from "@/constants/data";
 import { colors, fonts } from "@/theme/tokens";
 import { insertFeedingLog } from "@/lib/supabase";
+import { safeBack } from "@/lib/navigation";
 
 export default function LogMeal() {
   const activePetId = useAppStore((s) => s.activePetId);
@@ -57,7 +58,7 @@ export default function LogMeal() {
       // silently keep the local entry; could add a retry/sync queue later
     }
     setSaving(false);
-    router.back();
+    safeBack("/(app)/(tabs)/home");
   }
 
   if (foods.length === 0) {
@@ -66,7 +67,7 @@ export default function LogMeal() {
       <View style={styles.sheet}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>Log a feeding</Text>
-          <Pressable onPress={() => router.back()} style={styles.closeBtn}>
+          <Pressable onPress={() => safeBack("/(app)/(tabs)/home")} style={styles.closeBtn}>
             <X size={16} color={colors.ink} />
           </Pressable>
         </View>
@@ -81,7 +82,7 @@ export default function LogMeal() {
     <View style={styles.sheet}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>Log a feeding</Text>
-        <Pressable onPress={() => router.back()} style={styles.closeBtn}>
+        <Pressable onPress={() => safeBack("/(app)/(tabs)/home")} style={styles.closeBtn}>
           <X size={16} color={colors.ink} />
         </Pressable>
       </View>
