@@ -111,7 +111,7 @@ export default function LogMeal() {
       </View>
 
       <View style={styles.stepper}>
-        <Pressable onPress={() => nudge(-5)}>
+        <Pressable onPress={() => nudge(-1)}>
           <NeoBox depth={2} radius={12} style={styles.stepBtn}>
             <Minus size={16} color={colors.ink} />
           </NeoBox>
@@ -127,7 +127,7 @@ export default function LogMeal() {
           />
           <Text style={styles.gramsUnit}>g</Text>
         </View>
-        <Pressable onPress={() => nudge(5)}>
+        <Pressable onPress={() => nudge(1)}>
           <NeoBox depth={2} radius={12} style={styles.stepBtn}>
             <Plus size={16} color={colors.ink} />
           </NeoBox>

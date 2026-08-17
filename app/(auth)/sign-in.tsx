@@ -114,19 +114,6 @@ export default function SignIn() {
     setLoading(true);
     try {
       const redirectTo = Linking.createURL("auth-callback");
-      // In Expo Go this is a dynamic exp://<your-lan-ip>:8081/--/auth-callback
-      // URL, NOT the bowlkeeper:// scheme — it changes with your network, so
-      // it won't be in Supabase's redirect allow-list yet. Logging it here
-      // is the easiest way to grab the exact string to whitelist.
-      if (__DEV__) {
-        console.log("[Google sign-in] redirectTo:", redirectTo);
-        // Surfaced on-screen too since terminal logs are easy to miss when
-        // testing on-device. Copy this exact string into Supabase →
-        // Authentication → URL Configuration → Redirect URLs.
-        await new Promise<void>((resolve) =>
-          Alert.alert("Dev: redirect URL", redirectTo, [{ text: "Continue", onPress: () => resolve() }])
-        );
-      }
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo, skipBrowserRedirect: true },
@@ -156,7 +143,6 @@ export default function SignIn() {
             style={styles.heroIllustration}
             resizeMode="contain"
           />
-          <Text style={styles.appName}>Bowlkeeper</Text>
           <Text style={styles.tagline}>Feed on schedule. Track every gram.</Text>
         </View>
 
@@ -209,7 +195,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 24, justifyContent: "center" },
   hero: { alignItems: "center", marginBottom: 32 },
   heroIllustration: { width: 168, height: 148, marginBottom: 6 },
-  appName: { fontFamily: fonts.display, fontSize: 28, color: colors.ink },
   tagline: { fontFamily: fonts.body, fontSize: 14, color: colors.inkSoft, marginTop: 8 },
   form: { width: "100%" },
   googleBox: {

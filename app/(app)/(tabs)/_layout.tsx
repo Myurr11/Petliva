@@ -36,7 +36,7 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           const options = descriptors[route.key].options;
           const focused = state.index === index;
           const label = typeof options.tabBarLabel === "string" ? options.tabBarLabel : options.title ?? route.name;
-          const icon = options.tabBarIcon?.({ focused, color: focused ? colors.accent : "#8A8078", size: 22 });
+          const icon = options.tabBarIcon?.({ focused, color: focused ? colors.accent : "#8A8078", size: 23 });
 
           return (
             <TouchableOpacity
@@ -71,7 +71,6 @@ export default function TabsLayout() {
       <Tabs.Screen name="insights" options={{ title: "Insights", tabBarIcon: ({ color, size }) => <BarChart color={color} size={size} /> }} />
       <Tabs.Screen name="vet" options={{ title: "Vet", tabBarIcon: ({ color, size }) => <Stethoscope color={color} size={size} /> }} />
       <Tabs.Screen name="inventory" options={{ title: "Food", tabBarIcon: ({ color, size }) => <Package color={color} size={size} /> }} />
-      <Tabs.Screen name="profile" options={{ href: null }} />
     </Tabs>
   );
 }
