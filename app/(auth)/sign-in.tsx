@@ -114,6 +114,19 @@ export default function SignIn() {
     setLoading(true);
     try {
       const redirectTo = Linking.createURL("auth-callback");
+      // In Expo Go this is a dynamic exp://<your-lan-ip>:8081/--/auth-callback
+      // URL, NOT the bowlkeeper:// scheme — it changes with your network, so
+      // it won't be in Supabase's redirect allow-list yet. Logging it here
+      // is the easiest way to grab the exact string to whitelist.
+      if (__DEV__) {
+        console.log("[Google sign-in] redirectTo:", redirectTo);
+        // Surfaced on-screen too since terminal logs are easy to miss when
+        // testing on-device. Copy this exact string into Supabase →
+        // Authentication → URL Configuration → Redirect URLs.
+        await new Promise<void>((resolve) =>
+          Alert.alert("Dev: redirect URL", redirectTo, [{ text: "Continue", onPress: () => resolve() }])
+        );
+      }
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo, skipBrowserRedirect: true },
