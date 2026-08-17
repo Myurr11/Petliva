@@ -15,12 +15,20 @@ import { supabase, fetchUserPetRecords } from "@/lib/supabase";
 const WELCOME_BACK_ILLUSTRATION = require("../../assets/illustrations/welcome-back.png");
 const LETS_GET_STARTED_ILLUSTRATION = require("../../assets/illustrations/lets-get-started.png");
 
+// Where Supabase sends people after they click the email-confirmation link.
+// Without this, Supabase falls back to the dashboard's "Site URL" (often
+// left as the localhost default), which is why the link was landing on a
+// browser "can't connect" page even though the email itself *did* get
+// confirmed. Point it at a small hosted success page instead — see
+// docs/email-confirmed.html and the Supabase setup note in the README.
+const EMAIL_REDIRECT_TO = process.env.EXPO_PUBLIC_EMAIL_CONFIRM_URL;
+
 WebBrowser.maybeCompleteAuthSession();
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<"signUp" | "signIn">("signUp");
+  const [mode, setMode] = useState<"signUp" | "signIn">("signIn");
   const [loading, setLoading] = useState(false);
   const setUser = useAppStore((s) => s.setUser);
   const setAuthed = useAppStore((s) => s.setAuthed);
@@ -56,8 +64,31 @@ export default function SignIn() {
     setLoading(true);
     try {
       if (mode === "signUp") {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: EMAIL_REDIRECT_TO ? { emailRedirectTo: EMAIL_REDIRECT_TO } : undefined,
+        });
         if (error) throw error;
+
+        // Supabase's signUp() deliberately looks identical (no error) whether
+        // the email is brand new or already belongs to a confirmed account —
+        // that's an anti-enumeration measure, not a bug. The one reliable
+        // signal it gives us is `identities`: an empty array means "this
+        // email is already registered," even though no error was thrown.
+        // Without this check, someone with an existing account gets told
+        // "check your email" every time they accidentally hit Create Account
+        // instead of Log in — which is exactly what was happening here.
+        const alreadyRegistered = (data.user?.identities?.length ?? 0) === 0;
+        if (alreadyRegistered) {
+          Alert.alert(
+            "You already have an account",
+            `${email} is already registered. Log in instead.`
+          );
+          setMode("signIn");
+          return;
+        }
+
         if (!data.session) {
           Alert.alert(
             "Check your email",
