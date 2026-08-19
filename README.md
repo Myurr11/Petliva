@@ -1,7 +1,8 @@
 # Bowlkeeper — pet food tracker (Expo)
 
-Expo Router app matching the onboarding + feeding-log flow we prototyped, now
-wired to a real Supabase backend.
+I kept losing track of whether I'd already fed the cat, how much food was left in the bag, and when the last vet visit was. So I built this — a small Expo app, backed by Supabase, that keeps all of that in one place and syncs across my phone and my partner's.
+ 
+Not trying to be the next big pet app — just solving my own "did I already feed her?" problem properly.
 
 ## Screenshots
 
