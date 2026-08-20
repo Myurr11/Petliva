@@ -11,7 +11,11 @@ export interface Pet {
   type: PetType | "";
   breed: string;
   weightKg: string;
+  /** Whole years. Paired with ageMonths for a full "X yr Y mo" age. */
   ageYears: string;
+  /** 0-11. Lets onboarding capture age more precisely than whole years —
+   *  most pets aren't onboarded on their exact birthday. */
+  ageMonths: string;
   vaccinations: Record<string, boolean>;
   medicalTags: string[];
   medicalNotes: string;
@@ -24,6 +28,11 @@ export interface FoodItem {
   foodName: string;
   dailyGrams: string;
   mealsPerDay: number;
+  /** Which weekdays (0=Sun..6=Sat) this food is actually given. Undefined
+   *  (or the full 0-6 set) means every day — most dry food is. Wet food is
+   *  often only a few days a week, so this lets that be modeled instead of
+   *  forcing every food onto a daily cadence. */
+  daysOfWeek?: number[];
 }
 
 export interface FeedingLog {

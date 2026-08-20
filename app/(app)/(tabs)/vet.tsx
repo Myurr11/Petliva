@@ -1,8 +1,8 @@
-import React from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Image } from "react-native";
+import React, { useState } from "react";
+import { View, Text, TextInput, StyleSheet, ScrollView, Pressable, Alert, Image } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Syringe, Check, Calendar, Pill, Plus, Dog, Cat, MoreVertical, ChevronRight } from "@/components/icons";
+import { Syringe, Check, Calendar, Pill, Plus, X, Dog, Cat, MoreVertical, ChevronRight } from "@/components/icons";
 import { PetSwitcherHeader } from "@/components/ui/PetSwitcherHeader";
 import { NeoBox } from "@/components/ui/NeoBox";
 import { useAppStore } from "@/store/useAppStore";
@@ -10,6 +10,7 @@ import { CORE_VACCINES_CAT, CORE_VACCINES_DOG } from "@/constants/data";
 import { colors, fonts } from "@/theme/tokens";
 import { getMedicationStatus } from "@/lib/medicationStatus";
 import { isAppointmentPast } from "@/lib/appointmentTime";
+import { formatAge } from "@/lib/age";
 import { deleteAppointment, deleteMedication, updateVaccinations } from "@/lib/supabase";
 
 const RECENT_PAST_COUNT = 3;
@@ -20,6 +21,8 @@ export default function Vet() {
   const removeAppointment = useAppStore((s) => s.removeAppointment);
   const removeMedication = useAppStore((s) => s.removeMedication);
   const setVaccinationStatus = useAppStore((s) => s.setVaccinationStatus);
+  const removeVaccination = useAppStore((s) => s.removeVaccination);
+  const [customVaccineName, setCustomVaccineName] = useState("");
 
   if (!record || !activePetId) {
     return (
@@ -33,6 +36,7 @@ export default function Vet() {
   }
 
   const core = record.pet.type === "dog" ? CORE_VACCINES_DOG : CORE_VACCINES_CAT;
+  const customVaccines = Object.keys(record.pet.vaccinations).filter((v) => !core.includes(v));
   const PetIcon = record.pet.type === "dog" ? Dog : Cat;
   const upcoming = record.vet.appointments
     .filter((a) => !a.completed && !isAppointmentPast(a.date, a.time))
@@ -111,6 +115,30 @@ export default function Vet() {
     }
   }
 
+  async function addCustomVaccine() {
+    const name = customVaccineName.trim();
+    if (!name || record!.pet.vaccinations[name] !== undefined) return;
+    const vaccinations = { ...record!.pet.vaccinations, [name]: true };
+    setVaccinationStatus(activePetId!, name, true);
+    setCustomVaccineName("");
+    try {
+      await updateVaccinations(activePetId!, vaccinations);
+    } catch {
+      // The local update remains available while offline.
+    }
+  }
+
+  async function removeCustomVaccine(name: string) {
+    const vaccinations = { ...record!.pet.vaccinations };
+    delete vaccinations[name];
+    removeVaccination(activePetId!, name);
+    try {
+      await updateVaccinations(activePetId!, vaccinations);
+    } catch {
+      // offline — will resync next time vaccinations are updated
+    }
+  }
+
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -131,7 +159,7 @@ export default function Vet() {
           <View style={styles.petStatsRow}>
             <PetStat label="Breed" value={record.pet.breed || "—"} />
             <View style={styles.statDivider} />
-            <PetStat label="Age" value={record.pet.ageYears ? `${record.pet.ageYears} yr` : "—"} />
+            <PetStat label="Age" value={formatAge(record.pet.ageYears, record.pet.ageMonths)} />
             <View style={styles.statDivider} />
             <PetStat label="Weight" value={record.pet.weightKg ? `${record.pet.weightKg} kg` : "—"} />
           </View>
@@ -305,6 +333,51 @@ export default function Vet() {
               </Pressable>
             );
           })}
+
+          {customVaccines.map((v) => {
+            const done = !!record.pet.vaccinations[v];
+            return (
+              <View key={v} style={styles.vaccineRow}>
+                <Pressable onPress={() => toggleVaccination(v, done)} style={styles.vaccineLeft}>
+                  <Syringe size={14} color={colors.ink} />
+                  <Text style={styles.vaccineLabel} numberOfLines={1}>{v}</Text>
+                </Pressable>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <Pressable
+                    onPress={() => toggleVaccination(v, done)}
+                    style={[styles.vaccineStatus, { backgroundColor: done ? colors.sageBg : colors.surfaceAlt }]}
+                  >
+                    {done ? <Check size={12} color={colors.sage} /> : null}
+                    <Text style={[styles.vaccineStatusText, { color: done ? colors.sage : colors.inkSoft }]}>
+                      {done ? "Done" : "Not done"}
+                    </Text>
+                  </Pressable>
+                  <Pressable onPress={() => removeCustomVaccine(v)} hitSlop={8}>
+                    <X size={14} color={colors.inkSoft} />
+                  </Pressable>
+                </View>
+              </View>
+            );
+          })}
+
+          <View style={styles.addVaccineRow}>
+            <TextInput
+              value={customVaccineName}
+              onChangeText={setCustomVaccineName}
+              placeholder="Add another vaccine given…"
+              placeholderTextColor={colors.outlineVariant}
+              style={styles.addVaccineInput}
+              onSubmitEditing={addCustomVaccine}
+              returnKeyType="done"
+            />
+            <Pressable
+              onPress={addCustomVaccine}
+              disabled={!customVaccineName.trim()}
+              style={[styles.addVaccineBtn, !customVaccineName.trim() && { opacity: 0.4 }]}
+            >
+              <Plus size={15} color={colors.ink} />
+            </Pressable>
+          </View>
           <Text style={styles.vaccineHint}>Tap a vaccine to update its status.</Text>
         </NeoBox>
       </ScrollView>
@@ -377,9 +450,19 @@ const styles = StyleSheet.create({
   historyLinkText: { fontFamily: fonts.bodySemibold, fontSize: 12.5, color: colors.accentDeep },
   vaccineCard: { padding: 16 },
   vaccineRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8 },
-  vaccineLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
-  vaccineLabel: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.ink },
+  vaccineLeft: { flexDirection: "row", alignItems: "center", gap: 8, flex: 1, minWidth: 0 },
+  vaccineLabel: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.ink, flexShrink: 1 },
   vaccineStatus: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, borderWidth: 1.5, borderColor: colors.ink },
   vaccineStatusText: { fontFamily: fonts.bodySemibold, fontSize: 11 },
   vaccineHint: { fontFamily: fonts.body, fontSize: 10.5, color: colors.inkSoft, marginTop: 10 },
+  addVaccineRow: { flexDirection: "row", gap: 8, marginTop: 10 },
+  addVaccineInput: {
+    flex: 1, paddingVertical: 9, paddingHorizontal: 12, borderRadius: 9,
+    borderWidth: 1.5, borderColor: colors.ink, backgroundColor: colors.surfaceAlt,
+    fontFamily: fonts.body, fontSize: 12.5, color: colors.ink,
+  },
+  addVaccineBtn: {
+    width: 36, alignItems: "center", justifyContent: "center", borderRadius: 9,
+    borderWidth: 1.5, borderColor: colors.ink, backgroundColor: colors.accent,
+  },
 });

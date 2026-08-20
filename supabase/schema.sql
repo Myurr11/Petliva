@@ -100,6 +100,11 @@ create table if not exists foods (
   created_at timestamptz default now()
 );
 
+-- Which weekdays (0=Sun..6=Sat) this food is actually given. Null/omitted
+-- means every day. Lets a food (typically wet food) be scheduled a few
+-- days a week instead of assuming a daily cadence.
+alter table foods add column if not exists days_of_week int[];
+
 create table if not exists feeding_logs (
   id uuid primary key default gen_random_uuid(),
   pet_id uuid references pets on delete cascade not null,

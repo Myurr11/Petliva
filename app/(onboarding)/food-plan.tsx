@@ -5,6 +5,7 @@ import { ChevronRight, UtensilsCrossed, X, Plus } from "@/components/icons";
 import { ScreenTitle } from "@/components/ui/ScreenTitle";
 import { FoodSearchField } from "@/components/ui/FoodSearchField";
 import { Chip } from "@/components/ui/Chip";
+import { WeekdayToggle } from "@/components/ui/WeekdayToggle";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { NeoBox } from "@/components/ui/NeoBox";
 import { NeoOnboardHeader } from "@/components/ui/NeoOnboardHeader";
@@ -26,6 +27,9 @@ export default function FoodPlanStep() {
   const [saving, setSaving] = useState(false);
 
   const usableCount = foodsDraft.filter((f) => f.foodName.trim() && f.dailyGrams.trim()).length;
+  const heroSource = pet.type === "dog"
+    ? require("../../assets/illustrations/dog-eating.png")
+    : require("../../assets/illustrations/cat-eating.png");
 
   function addMore(category: FoodCategory) {
     addFoodDraft(category);
@@ -51,6 +55,7 @@ export default function FoodPlanStep() {
     <View style={styles.screen}>
       <NeoOnboardHeader step={9} total={9} />
       <ScrollView contentContainerStyle={styles.content}>
+        <Image source={heroSource} style={styles.heroIllustration} resizeMode="contain" />
         <ScreenTitle
           title={`What does ${pet.name || "your pet"} eat?`}
           sub="Most pets eat one dry food and one wet food — leave either blank if it doesn't apply, or add more below."
@@ -60,6 +65,7 @@ export default function FoodPlanStep() {
           <NeoBox key={food.id} depth={3} radius={16} style={styles.foodCard}>
             <View style={styles.foodCardHeader}>
               <View style={[styles.categoryBadge, { backgroundColor: food.category === "dry" ? colors.accent : colors.sageBg }]}>
+                <UtensilsCrossed size={12} color={colors.ink} />
                 <Text style={styles.categoryBadgeText}>{food.category === "dry" ? "Dry food" : "Wet food"}</Text>
               </View>
               {i >= DEFAULT_IDS_COUNT && (
@@ -91,6 +97,17 @@ export default function FoodPlanStep() {
                 <Chip key={n} label={`${n}`} active={food.mealsPerDay === n} onPress={() => updateFoodDraft(food.id, { mealsPerDay: n })} />
               ))}
             </View>
+
+            {food.category === "wet" && (
+              <>
+                <Text style={styles.label}>Which days a week?</Text>
+                <Text style={styles.sublabel}>Not everyone gives wet food daily — mark the days it applies.</Text>
+                <WeekdayToggle
+                  value={food.daysOfWeek}
+                  onChange={(days) => updateFoodDraft(food.id, { daysOfWeek: days })}
+                />
+              </>
+            )}
           </NeoBox>
         ))}
 
@@ -130,19 +147,21 @@ export default function FoodPlanStep() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.appBg },
   content: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32, flexGrow: 1 },
+  heroIllustration: { width: 128, height: 108, alignSelf: "center", marginBottom: 4 },
   foodCard: { padding: 16, marginBottom: 16 },
   foodCardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 },
-  categoryBadge: { borderRadius: 999, borderWidth: 2, borderColor: colors.ink, paddingVertical: 5, paddingHorizontal: 12 },
+  categoryBadge: { flexDirection: "row", alignItems: "center", gap: 6, borderRadius: 999, borderWidth: 2, borderColor: colors.ink, paddingVertical: 5, paddingHorizontal: 12 },
   categoryBadgeText: { fontFamily: fonts.labelBold, fontSize: 12, color: colors.ink },
   removeBtn: { width: 26, height: 26, borderRadius: 999, borderWidth: 1.5, borderColor: colors.ink, alignItems: "center", justifyContent: "center" },
   label: { fontFamily: fonts.labelBold, fontSize: 13, color: colors.ink, marginBottom: 8 },
+  sublabel: { fontFamily: fonts.body, fontSize: 11.5, color: colors.inkSoft, marginTop: -4, marginBottom: 10 },
   amountCard: {
     flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: colors.surfaceAlt,
     borderRadius: 12, borderWidth: 2, borderColor: colors.ink, paddingVertical: 12, paddingHorizontal: 16, marginBottom: 16,
   },
   amountInput: { flex: 1, fontFamily: fonts.mono, fontSize: 20, color: colors.ink },
   amountUnit: { fontFamily: fonts.mono, fontSize: 13, color: colors.inkSoft },
-  mealsRow: { flexDirection: "row", gap: 8 },
+  mealsRow: { flexDirection: "row", gap: 8, marginBottom: 4 },
   addMoreRow: { flexDirection: "row", gap: 10, marginBottom: 8 },
   addMoreBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,

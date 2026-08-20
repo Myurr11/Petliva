@@ -6,9 +6,11 @@ import { Plus, UtensilsCrossed, Clock3, Calendar, Pill } from "@/components/icon
 import { Ring } from "@/components/ui/Ring";
 import { NeoBox } from "@/components/ui/NeoBox";
 import { PetSwitcherHeader } from "@/components/ui/PetSwitcherHeader";
+import { MiniTag } from "@/components/ui/MiniTag";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
 import { getMedicationStatus } from "@/lib/medicationStatus";
+import { isFoodScheduledOn } from "@/lib/foodSchedule";
 import type { FoodItem, FeedingLog, FoodCategory } from "@/types";
 
 function isUpcoming(dateStr: string) {
@@ -156,7 +158,10 @@ export default function Home() {
                     <View style={{ flex: 1 }}>
                       <Text style={styles.medName}>{m.name}</Text>
                       {!!(m.dosage || m.schedule) && (
-                        <Text style={styles.medDetail}>{[m.dosage, m.schedule].filter(Boolean).join(" · ")}</Text>
+                        <View style={styles.medMetaRow}>
+                          {!!m.dosage && <MiniTag label={m.dosage} />}
+                          {!!m.schedule && <MiniTag label={m.schedule} />}
+                        </View>
                       )}
                     </View>
                     <View style={styles.medDayBadge}>
@@ -177,25 +182,30 @@ export default function Home() {
             </Text>
           </View>
         ) : (
-          <View style={{ gap: 10 }}>
-            {todayLogs.map((l) => (
-              <View key={l.id} style={styles.logRow}>
-                <View style={styles.logLeft}>
-                  <UtensilsCrossed size={16} color={colors.ink} />
-                  <View>
-                    <Text style={styles.logLabel}>{l.label} {foods.length > 1 ? `· ${foodLabel(l.foodId)}` : ""}</Text>
-                    <View style={styles.logTimeRow}>
+          <NeoBox depth={3} radius={16} style={styles.logCard}>
+            {todayLogs.map((l, i) => {
+              const f = foods.find((x) => x.id === l.foodId);
+              const isWet = f?.category === "wet";
+              return (
+                <View key={l.id} style={[styles.logRow, i > 0 && styles.logRowDivider]}>
+                  <View style={[styles.logIconWrap, { backgroundColor: isWet ? colors.sageBg : colors.accent }]}>
+                    <UtensilsCrossed size={15} color={colors.ink} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.logLabel}>{l.label}</Text>
+                    <View style={styles.logMetaRow}>
                       <Clock3 size={11} color={colors.inkSoft} />
                       <Text style={styles.logTime}>
-                        {new Date(l.loggedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · logged automatically
+                        {new Date(l.loggedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       </Text>
+                      {foods.length > 1 && <MiniTag label={foodLabel(l.foodId)} tone={isWet ? "sage" : "accent"} />}
                     </View>
                   </View>
+                  <Text style={styles.logGrams}>{l.grams}<Text style={styles.logGramsUnit}>g</Text></Text>
                 </View>
-                <Text style={styles.logGrams}>{l.grams}g</Text>
-              </View>
-            ))}
-          </View>
+              );
+            })}
+          </NeoBox>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -263,14 +273,19 @@ function CategoryRingPage({
 }: {
   category: FoodCategory; title: string; foods: FoodItem[]; todayLogs: FeedingLog[]; petName: string;
 }) {
+  const today = new Date();
   const catFoods = foods.filter((f) => f.category === category);
   const catFoodIds = new Set(catFoods.map((f) => f.id));
-  const dailyGrams = catFoods.reduce((sum, f) => sum + (Number(f.dailyGrams) || 0), 0);
+  // Only foods actually scheduled for today count toward today's target —
+  // a wet food given just 3 days a week shouldn't inflate the ring (or
+  // sit un-fillable) on its off days.
+  const scheduledTodayFoods = catFoods.filter((f) => isFoodScheduledOn(f, today));
+  const dailyGrams = scheduledTodayFoods.reduce((sum, f) => sum + (Number(f.dailyGrams) || 0), 0);
   const catLogs = todayLogs.filter((l) => catFoodIds.has(l.foodId));
   const total = catLogs.reduce((sum, l) => sum + l.grams, 0);
   const pct = dailyGrams ? Math.min(100, Math.round((total / dailyGrams) * 100)) : 0;
   const remaining = Math.max(0, dailyGrams - total);
-  const mealsPerDay = catFoods.reduce((sum, f) => sum + f.mealsPerDay, 0);
+  const mealsPerDay = scheduledTodayFoods.reduce((sum, f) => sum + f.mealsPerDay, 0);
 
   return (
     <NeoBox depth={4} radius={24} style={styles.ringCard}>
@@ -287,6 +302,9 @@ function CategoryRingPage({
               <UtensilsCrossed size={12} color={colors.inkSoft} />
               <Text style={styles.foodNameTagText} numberOfLines={1}>{catFoods[0].foodName || "Unnamed food"}</Text>
             </View>
+          )}
+          {catFoods.length === 1 && !isFoodScheduledOn(catFoods[0], today) && (
+            <Text style={styles.notScheduledHint}>Not scheduled for today — {catFoods[0].foodName || "this food"} is given on other days.</Text>
           )}
           <View style={styles.ringWrap}>
             <Ring pct={pct} />
@@ -305,10 +323,15 @@ function CategoryRingPage({
               {catFoods.map((f) => {
                 const fTotal = todayLogs.filter((l) => l.foodId === f.id).reduce((s, l) => s + l.grams, 0);
                 const fDaily = Number(f.dailyGrams) || 0;
+                const scheduledToday = isFoodScheduledOn(f, today);
                 return (
                   <View key={f.id} style={styles.perFoodRow}>
                     <Text style={styles.perFoodLabel} numberOfLines={1}>{f.foodName}</Text>
-                    <Text style={styles.perFoodValue}>{fTotal}g / {fDaily || "—"}g</Text>
+                    {scheduledToday ? (
+                      <Text style={styles.perFoodValue}>{fTotal}g / {fDaily || "—"}g</Text>
+                    ) : (
+                      <Text style={styles.perFoodValueMuted}>not today</Text>
+                    )}
                   </View>
                 );
               })}
@@ -360,6 +383,8 @@ const styles = StyleSheet.create({
   perFoodRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   perFoodLabel: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 12.5, color: colors.ink },
   perFoodValue: { fontFamily: fonts.mono, fontSize: 11.5, color: colors.inkSoft },
+  perFoodValueMuted: { fontFamily: fonts.mono, fontSize: 11.5, color: colors.outlineVariant, fontStyle: "italic" },
+  notScheduledHint: { fontFamily: fonts.body, fontSize: 11.5, color: colors.inkSoft, textAlign: "center", marginBottom: 12, paddingHorizontal: 10 },
   pageDotsRow: { flexDirection: "row", justifyContent: "center", gap: 6, marginTop: 10 },
   pageDot: { width: 7, height: 7, borderRadius: 999, backgroundColor: colors.track, borderWidth: 1.5, borderColor: colors.ink },
   pageDotActive: { backgroundColor: colors.accent, width: 18 },
@@ -385,6 +410,7 @@ const styles = StyleSheet.create({
   medIconWrap: { width: 30, height: 30, borderRadius: 10, backgroundColor: colors.surfaceAlt, borderWidth: 1.5, borderColor: colors.ink, alignItems: "center", justifyContent: "center" },
   medName: { fontFamily: fonts.bodySemibold, fontSize: 13.5, color: colors.ink },
   medDetail: { fontFamily: fonts.body, fontSize: 11.5, color: colors.inkSoft, marginTop: 1 },
+  medMetaRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
   medDayBadge: { backgroundColor: colors.sageBg, borderRadius: 999, borderWidth: 1.5, borderColor: colors.ink, paddingVertical: 4, paddingHorizontal: 9 },
   medDayBadgeText: { fontFamily: fonts.labelBold, fontSize: 10, color: colors.ink },
 
@@ -403,13 +429,16 @@ const styles = StyleSheet.create({
   sectionLabel: { fontFamily: fonts.labelBold, fontSize: 12.5, color: colors.ink, letterSpacing: 0.5, marginBottom: 10, marginTop: 6 },
   empty: { backgroundColor: colors.surface, borderRadius: 14, borderWidth: 2, borderColor: colors.ink, padding: 18 },
   emptyText: { color: colors.inkSoft, fontSize: 13.5, textAlign: "center", fontFamily: fonts.body },
-  logRow: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingVertical: 12, paddingHorizontal: 16, borderRadius: 14, borderWidth: 2, borderColor: colors.ink, backgroundColor: colors.surface,
+  logCard: { paddingHorizontal: 14 },
+  logRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 13 },
+  logRowDivider: { borderTopWidth: 1.5, borderTopColor: colors.track },
+  logIconWrap: {
+    width: 34, height: 34, borderRadius: 10, borderWidth: 1.5, borderColor: colors.ink,
+    alignItems: "center", justifyContent: "center",
   },
-  logLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
   logLabel: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.ink },
-  logTimeRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
-  logTime: { fontSize: 11.5, color: colors.inkSoft, fontFamily: fonts.body },
-  logGrams: { fontFamily: fonts.monoSemibold, color: colors.ink, fontSize: 15 },
+  logMetaRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3, flexWrap: "wrap" },
+  logTime: { fontSize: 11.5, color: colors.inkSoft, fontFamily: fonts.body, marginRight: 2 },
+  logGrams: { fontFamily: fonts.monoSemibold, color: colors.ink, fontSize: 17 },
+  logGramsUnit: { fontFamily: fonts.mono, color: colors.inkSoft, fontSize: 12 },
 });

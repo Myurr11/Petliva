@@ -5,6 +5,7 @@ import type {
   UserProfile, Pet, FoodItem, FeedingLog, StockEntry, PetRecord,
   VetInfo, VetAppointment, Medication, FoodCategory,
 } from "@/types";
+import { splitDecimalYears } from "@/lib/age";
 
 function todayISO() {
   const d = new Date();
@@ -86,6 +87,10 @@ interface AppState {
   updateAppointment: (petId: string, appointmentId: string, patch: Partial<Omit<VetAppointment, "id">>) => void;
   updateMedication: (petId: string, medicationId: string, patch: Partial<Omit<Medication, "id">>) => void;
   setVaccinationStatus: (petId: string, name: string, done: boolean) => void;
+  /** Fully removes a vaccination entry (used for custom, non-preset
+   *  vaccines added by the user — unlike setVaccinationStatus(false), this
+   *  drops the key entirely instead of leaving a "not done" record). */
+  removeVaccination: (petId: string, name: string) => void;
   /** Merges new tags into the pet's medicalTags, de-duplicated. Used to sync
    *  conditions diagnosed at a vet visit into the pet's overall profile. */
   addMedicalTags: (petId: string, tags: string[]) => void;
@@ -117,6 +122,7 @@ const emptyPet: Pet = {
   breed: "",
   weightKg: "",
   ageYears: "",
+  ageMonths: "",
   vaccinations: {},
   medicalTags: [],
   medicalNotes: "",
@@ -334,6 +340,19 @@ export const useAppStore = create<AppState>()(
         });
       },
 
+      removeVaccination: (petId, name) => {
+        const record = get().pets[petId];
+        if (!record) return;
+        const rest = { ...record.pet.vaccinations };
+        delete rest[name];
+        set({
+          pets: {
+            ...get().pets,
+            [petId]: { ...record, pet: { ...record.pet, vaccinations: rest } },
+          },
+        });
+      },
+
       addMedicalTags: (petId, tags) => {
         const record = get().pets[petId];
         if (!record) return;
@@ -461,9 +480,9 @@ export const useAppStore = create<AppState>()(
         }),
     }),
     {
-      name: "bowlkeeper-storage",
+      name: "petliva-storage",
       storage: createJSONStorage(() => AsyncStorage),
-      version: 5,
+      version: 6,
       // isHydrating is a transient runtime flag, not real state — never
       // persist it, or an app crash mid-fetch could leave it stuck `true`
       // forever and block every future launch.
@@ -551,6 +570,24 @@ export const useAppStore = create<AppState>()(
             pets[id] = { ...record, vet: { ...record.vet, medications } };
           }
           state = { ...state, pets };
+        }
+
+        // v5 -> v6: Pet.ageYears was a single decimal ("2.25") entered via a
+        // free-text field. Age is now captured as separate whole-years +
+        // months via a wheel picker, so split any existing decimal into
+        // those two fields — onboarding drafts and every committed pet.
+        if (fromVersion < 6 && state) {
+          const splitPet = (pet: any) => {
+            if (!pet || pet.ageMonths !== undefined) return pet;
+            const decimal = Number(pet.ageYears) || 0;
+            const { years, months } = splitDecimalYears(decimal);
+            return { ...pet, ageYears: pet.ageYears ? String(years) : "", ageMonths: pet.ageYears ? String(months) : "" };
+          };
+          const pets = { ...(state.pets ?? {}) };
+          for (const id of Object.keys(pets)) {
+            pets[id] = { ...pets[id], pet: splitPet(pets[id].pet) };
+          }
+          state = { ...state, pets, pet: splitPet(state.pet) ?? emptyPet };
         }
 
         return state;

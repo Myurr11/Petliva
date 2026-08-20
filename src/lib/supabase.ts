@@ -2,6 +2,7 @@ import "react-native-url-polyfill/auto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
 import type { Pet, PetType, FoodItem, FeedingLog, StockEntry, VetInfo, VetAppointment, Medication, PetRecord } from "@/types";
+import { splitDecimalYears, ageToDecimalYears } from "@/lib/age";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL as string;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY as string;
@@ -72,7 +73,12 @@ export async function fetchUserPetRecords(): Promise<Record<string, PetRecord>> 
         type: (p.type ?? "") as PetType | "",
         breed: p.breed ?? "",
         weightKg: p.weight_kg != null ? String(p.weight_kg) : "",
-        ageYears: p.age_years != null ? String(p.age_years) : "",
+        ...(p.age_years != null
+          ? (() => {
+              const { years, months } = splitDecimalYears(Number(p.age_years));
+              return { ageYears: String(years), ageMonths: String(months) };
+            })()
+          : { ageYears: "", ageMonths: "" }),
         vaccinations: p.vaccinations ?? {},
         medicalTags: p.medical_tags ?? [],
         medicalNotes: p.medical_notes ?? "",
@@ -93,6 +99,7 @@ export async function fetchUserPetRecords(): Promise<Record<string, PetRecord>> 
       foodName: f.food_name ?? "",
       dailyGrams: f.daily_grams != null ? String(f.daily_grams) : "",
       mealsPerDay: f.meals_per_day ?? 1,
+      daysOfWeek: Array.isArray(f.days_of_week) && f.days_of_week.length > 0 ? f.days_of_week : undefined,
     });
   }
 
@@ -163,7 +170,7 @@ export async function createPetAndFoods(pet: Pet, foods: FoodItem[], vet: VetInf
       type: pet.type,
       breed: pet.breed,
       weight_kg: pet.weightKg ? Number(pet.weightKg) : null,
-      age_years: pet.ageYears ? Number(pet.ageYears) : null,
+      age_years: pet.ageYears || pet.ageMonths ? ageToDecimalYears(pet.ageYears, pet.ageMonths) : null,
       vaccinations: pet.vaccinations,
       medical_tags: pet.medicalTags,
       medical_notes: pet.medicalNotes,
@@ -185,6 +192,7 @@ export async function createPetAndFoods(pet: Pet, foods: FoodItem[], vet: VetInf
         food_name: food.foodName,
         daily_grams: Number(food.dailyGrams),
         meals_per_day: food.mealsPerDay,
+        days_of_week: food.daysOfWeek ?? null,
       })
       .select()
       .single();
@@ -213,6 +221,7 @@ export async function insertFood(petId: string, food: FoodItem) {
       food_name: food.foodName,
       daily_grams: Number(food.dailyGrams) || 0,
       meals_per_day: food.mealsPerDay,
+      days_of_week: food.daysOfWeek ?? null,
     })
     .select()
     .single();
@@ -228,6 +237,7 @@ export async function updateFood(food: FoodItem) {
       food_name: food.foodName,
       daily_grams: Number(food.dailyGrams) || 0,
       meals_per_day: food.mealsPerDay,
+      days_of_week: food.daysOfWeek ?? null,
     })
     .eq("id", food.id);
   if (error) throw error;

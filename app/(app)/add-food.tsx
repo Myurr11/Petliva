@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { X, UtensilsCrossed } from "@/components/icons";
 import { FoodSearchField } from "@/components/ui/FoodSearchField";
 import { Chip } from "@/components/ui/Chip";
+import { WeekdayToggle } from "@/components/ui/WeekdayToggle";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
@@ -104,6 +105,14 @@ export default function AddFood() {
           ))}
         </View>
 
+        {draft.category === "wet" && (
+          <>
+            <Text style={styles.label}>Which days a week?</Text>
+            <Text style={styles.sublabel}>Not everyone gives wet food daily — mark the days it applies.</Text>
+            <WeekdayToggle value={draft.daysOfWeek} onChange={(days) => patch({ daysOfWeek: days })} />
+          </>
+        )}
+
         <View style={{ height: 16 }} />
         <PrimaryButton
           label={saving ? "Saving…" : existing ? "Save changes" : "Add food"}
@@ -122,6 +131,7 @@ const styles = StyleSheet.create({
   title: { fontFamily: fonts.display, fontSize: 19, color: colors.ink },
   closeBtn: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 2, borderColor: colors.ink, padding: 6 },
   label: { fontFamily: fonts.labelBold, fontSize: 13.5, color: colors.ink, marginBottom: 8, marginTop: 10 },
+  sublabel: { fontFamily: fonts.body, fontSize: 11.5, color: colors.inkSoft, marginTop: -6, marginBottom: 10 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
   amountCard: {
     flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: colors.surfaceAlt,

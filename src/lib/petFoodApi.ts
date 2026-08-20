@@ -48,7 +48,7 @@ function toProduct(p: OpffProduct): PetFoodProduct | null {
 export async function searchPetFood(query: string, limit = 15): Promise<PetFoodProduct[]> {
   if (!query.trim()) return [];
   const url = `${SEARCH_URL}?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=${limit}&fields=${FIELDS}`;
-  const res = await fetch(url, { headers: { "User-Agent": "Bowlkeeper - Expo App - Android/iOS" } });
+  const res = await fetch(url, { headers: { "User-Agent": "Petliva - Expo App - Android/iOS" } });
   if (!res.ok) throw new Error(`Open Pet Food Facts search failed (${res.status})`);
   const data = await res.json();
   const products: OpffProduct[] = data.products ?? [];

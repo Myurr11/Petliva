@@ -3,7 +3,7 @@ import { View, Image, StyleSheet, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { ChevronRight } from "@/components/icons";
 import { ScreenTitle } from "@/components/ui/ScreenTitle";
-import { TextField } from "@/components/ui/TextField";
+import { AgeField } from "@/components/ui/AgeField";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { NeoOnboardHeader } from "@/components/ui/NeoOnboardHeader";
 import { useAppStore } from "@/store/useAppStore";
@@ -12,8 +12,7 @@ import { colors } from "@/theme/tokens";
 export default function PetAgeStep() {
   const pet = useAppStore((s) => s.pet);
   const setPet = useAppStore((s) => s.setPet);
-  const age = Number(pet.ageYears);
-  const validAge = pet.ageYears.trim() !== "" && Number.isFinite(age) && age >= 0;
+  const validAge = pet.ageYears.trim() !== "";
 
   return (
     <View style={styles.screen}>
@@ -26,14 +25,13 @@ export default function PetAgeStep() {
         />
         <ScreenTitle
           title={`How old is ${pet.name || "your pet"}?`}
-          sub="Enter their age in years. Decimals are welcome for younger pets."
+          sub="Roughly is fine — years and months, however close you can get."
         />
-        <TextField
-          label="Age (years)"
-          placeholder="e.g. 2 or 0.5"
-          keyboardType="decimal-pad"
-          value={pet.ageYears}
-          onChangeText={(value) => setPet({ ageYears: value.replace(/[^0-9.]/g, "") })}
+        <AgeField
+          label="Age"
+          years={pet.ageYears}
+          months={pet.ageMonths}
+          onChange={(years, months) => setPet({ ageYears: years, ageMonths: months })}
         />
         <View style={styles.spacer} />
         <PrimaryButton
