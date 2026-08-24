@@ -194,11 +194,13 @@ export default function Home() {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.logLabel}>{l.label}</Text>
                     <View style={styles.logMetaRow}>
-                      <Clock3 size={11} color={colors.inkSoft} />
-                      <Text style={styles.logTime}>
-                        {new Date(l.loggedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </Text>
                       {foods.length > 1 && <MiniTag label={foodLabel(l.foodId)} tone={isWet ? "sage" : "accent"} />}
+                      <View style={styles.logTimeWrap}>
+                        <Clock3 size={11} color={colors.inkSoft} style={styles.logTimeIcon} />
+                        <Text style={styles.logTime}>
+                          {new Date(l.loggedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </Text>
+                      </View>
                     </View>
                   </View>
                   <Text style={styles.logGrams}>{l.grams}<Text style={styles.logGramsUnit}>g</Text></Text>
@@ -437,8 +439,10 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   logLabel: { fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.ink },
-  logMetaRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3, flexWrap: "wrap" },
-  logTime: { fontSize: 11.5, color: colors.inkSoft, fontFamily: fonts.body, marginRight: 2 },
+  logMetaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4, flexWrap: "wrap" },
+  logTimeWrap: { flexDirection: "row", alignItems: "center", height: 14 },
+  logTimeIcon: { marginRight: 4, marginTop: 1 },
+  logTime: { fontSize: 11.5, lineHeight: 14, color: colors.inkSoft, fontFamily: fonts.body },
   logGrams: { fontFamily: fonts.monoSemibold, color: colors.ink, fontSize: 17 },
   logGramsUnit: { fontFamily: fonts.mono, color: colors.inkSoft, fontSize: 12 },
 });

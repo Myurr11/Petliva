@@ -17,6 +17,21 @@ function parseTimeToParts(time: string): { hours: number; minutes: number } | nu
   return { hours, minutes };
 }
 
+/** Public wrapper for parsing free-text time strings ("7:00 AM", "14:30")
+ *  entered for custom feeding/medication reminder times. */
+export function parseTime(time: string): { hours: number; minutes: number } | null {
+  return parseTimeToParts(time);
+}
+
+/** Formats an hour/minute pair as a 12-hour display string, e.g. 7,0 ->
+ *  "7:00 AM". Used to prefill custom-reminder inputs with the current
+ *  auto-computed time so editing starts from something sensible. */
+export function formatHourMinute(hour: number, minute: number): string {
+  const period = hour >= 12 ? "PM" : "AM";
+  const h12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${h12}:${String(minute).padStart(2, "0")} ${period}`;
+}
+
 /** Combines an appointment's date + optional time into a single Date. If the
  *  time can't be parsed (or isn't set), returns midnight on that date. */
 export function appointmentDateTime(date: string, time?: string): Date {

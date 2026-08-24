@@ -33,6 +33,10 @@ export interface FoodItem {
    *  often only a few days a week, so this lets that be modeled instead of
    *  forcing every food onto a daily cadence. */
   daysOfWeek?: number[];
+  /** Custom feeding-reminder times ("7:00 AM" style strings), one per meal.
+   *  When unset, reminder times are auto-spread across the day based on
+   *  mealsPerDay — most people never need to touch this. */
+  reminderTimes?: string[];
 }
 
 export interface FeedingLog {
@@ -65,10 +69,14 @@ export interface VetAppointment {
   phoneNo?: string;
   note: string;
   completed: boolean;
-  /** Diseases / conditions the vet identified during this specific visit. */
+  /** Diagnoses / conditions the vet identified during this specific visit. */
   diagnosis?: string[];
   /** Free-text findings from this visit — diagnostic report results, labs, etc. */
   diagnosticNotes?: string;
+  /** Custom reminder offsets, in minutes before the appointment. Unset
+   *  means the default of 2 hours + 30 minutes before. An explicit empty
+   *  array means the user turned reminders off for this appointment. */
+  reminderOffsetsMinutes?: number[];
 }
 
 export interface Medication {
@@ -83,6 +91,10 @@ export interface Medication {
   /** Which vet appointment this was prescribed in, if any — lets the
    *  appointment's detail page list medications that came out of that visit. */
   appointmentId?: string;
+  /** Custom dose-reminder times ("9:00 AM" style strings). When unset,
+   *  times are auto-derived from `schedule` (once/twice daily, every 8
+   *  hours, with food). */
+  reminderTimes?: string[];
 }
 
 export interface VetInfo {

@@ -9,6 +9,7 @@ import { NeoOnboardHeader } from "@/components/ui/NeoOnboardHeader";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
 import { supabase } from "@/lib/supabase";
+import { cancelAllNotifications } from "@/lib/notifications";
 
 export default function ProfileStep() {
   const user = useAppStore((s) => s.user);
@@ -17,6 +18,7 @@ export default function ProfileStep() {
 
   async function signOut() {
     await supabase.auth.signOut();
+    await cancelAllNotifications();
     resetAll();
     router.replace("/(auth)/sign-in");
   }

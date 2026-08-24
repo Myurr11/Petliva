@@ -1,9 +1,11 @@
 import React from "react";
+import { StyleProp, TextStyle } from "react-native";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 
 export interface IconProps {
   size?: number;
   color?: string;
+  style?: StyleProp<TextStyle>;
 }
 
 // Centralizing the icon set here means the rest of the app can keep
@@ -16,7 +18,7 @@ export const Scale = (p: IconProps) => <MaterialCommunityIcons name="scale-bathr
 export const Syringe = (p: IconProps) => <MaterialCommunityIcons name="needle" size={p.size ?? 20} color={p.color ?? "#000"} />;
 export const FileText = (p: IconProps) => <Feather name="file-text" size={p.size ?? 20} color={p.color ?? "#000"} />;
 export const UtensilsCrossed = (p: IconProps) => <MaterialCommunityIcons name="silverware-fork-knife" size={p.size ?? 20} color={p.color ?? "#000"} />;
-export const Clock3 = (p: IconProps) => <Feather name="clock" size={p.size ?? 20} color={p.color ?? "#000"} />;
+export const Clock3 = (p: IconProps) => <Feather name="clock" size={p.size ?? 20} color={p.color ?? "#000"} style={p.style} />;
 export const Plus = (p: IconProps) => <Feather name="plus" size={p.size ?? 20} color={p.color ?? "#000"} />;
 export const Minus = (p: IconProps) => <Feather name="minus" size={p.size ?? 20} color={p.color ?? "#000"} />;
 export const Check = (p: IconProps) => <Feather name="check" size={p.size ?? 20} color={p.color ?? "#000"} />;

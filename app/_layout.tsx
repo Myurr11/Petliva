@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -22,6 +22,7 @@ import {
 import { colors } from "@/theme/tokens";
 import { supabase, fetchUserPetRecords } from "@/lib/supabase";
 import { useAppStore } from "@/store/useAppStore";
+import { syncAllNotifications } from "@/lib/notifications";
 import type { Session } from "@supabase/supabase-js";
 
 SplashScreen.preventAutoHideAsync();
@@ -49,6 +50,36 @@ export default function RootLayout() {
   useEffect(() => {
     if (fontsLoaded) SplashScreen.hideAsync();
   }, [fontsLoaded]);
+
+  // Feeding, appointment, and medication reminders are fully derived from
+  // the pet data (meals/day, wet-food days, appointment date+time,
+  // medication schedule/duration — plus any custom reminder overrides the
+  // user sets) rather than being configured separately, so the simplest
+  // correct place to keep them in sync is here: whenever the relevant
+  // slice of pet data changes, cancel and reschedule. The signature only
+  // includes fields that actually affect what gets scheduled, so editing
+  // something unrelated (e.g. a diagnosis note) doesn't trigger a
+  // pointless reschedule.
+  const pets = useAppStore((s) => s.pets);
+  const notifSignature = useMemo(
+    () =>
+      JSON.stringify(
+        Object.values(pets).map((r) => ({
+          id: r.id,
+          name: r.pet.name,
+          foods: r.foods.map((f) => ({ n: f.foodName, m: f.mealsPerDay, d: f.daysOfWeek, rt: f.reminderTimes })),
+          appts: r.vet.appointments.map((a) => ({ id: a.id, date: a.date, time: a.time, h: a.hospitalName, c: a.completed, ro: a.reminderOffsetsMinutes })),
+          meds: r.vet.medications.map((m) => ({ id: m.id, s: m.schedule, sd: m.startDate, dd: m.durationDays, rt: m.reminderTimes })),
+        }))
+      ),
+    [pets]
+  );
+  const lastSyncedSignature = useRef<string | null>(null);
+  useEffect(() => {
+    if (lastSyncedSignature.current === notifSignature) return;
+    lastSyncedSignature.current = notifSignature;
+    syncAllNotifications(pets).catch((e) => console.warn("Failed to sync notifications:", e));
+  }, [notifSignature]);
 
   // Local `isAuthed` (persisted via AsyncStorage) can drift from the real
   // Supabase session — e.g. signing up while "Confirm email" is on leaves

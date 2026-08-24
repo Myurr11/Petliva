@@ -7,6 +7,7 @@ import { NeoBox } from "@/components/ui/NeoBox";
 import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
 import { supabase } from "@/lib/supabase";
+import { cancelAllNotifications } from "@/lib/notifications";
 import { safeBack } from "@/lib/navigation";
 
 export default function Profile() {
@@ -33,6 +34,7 @@ export default function Profile() {
         style: "destructive",
         onPress: async () => {
           await supabase.auth.signOut();
+          await cancelAllNotifications();
           resetAll();
           router.replace("/(auth)/sign-in");
         },

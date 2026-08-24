@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { View, Text, TextInput, StyleSheet, Pressable, ScrollView } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -10,6 +10,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
 import { insertMedication, updateMedication as updateRemoteMedication } from "@/lib/supabase";
 import { safeBack } from "@/lib/navigation";
+import { medicationSlotCount, defaultTimesPreview } from "@/lib/notifications";
 
 const DOSAGE_PRESETS = ["1 tablet", "0.5 tablet", "5 ml", "10 mg", "Custom"];
 const SCHEDULE_PRESETS = ["Once daily", "Twice daily", "Every 8 hours", "With food", "Custom"];
@@ -25,6 +26,7 @@ export default function AddMedication() {
   const addMedication = useAppStore((s) => s.addMedication);
   const updateMedication = useAppStore((s) => s.updateMedication);
   const syncMedicationId = useAppStore((s) => s.syncMedicationId);
+  const primaryFood = useAppStore((s) => (activePetId ? s.pets[activePetId]?.foods[0] : undefined));
 
   const dosageIsPreset = DOSAGE_PRESETS.slice(0, -1).includes(medication?.dosage ?? "");
   const scheduleIsPreset = SCHEDULE_PRESETS.slice(0, -1).includes(medication?.schedule ?? "");
@@ -40,15 +42,32 @@ export default function AddMedication() {
   const [customDuration, setCustomDuration] = useState(durationIsPreset ? "" : savedDuration);
   const [saving, setSaving] = useState(false);
 
+  const [useCustomReminders, setUseCustomReminders] = useState(!!medication?.reminderTimes?.length);
+  const [reminderInputs, setReminderInputs] = useState<string[]>(
+    medication?.reminderTimes?.length
+      ? medication.reminderTimes
+      : defaultTimesPreview(medicationSlotCount(medication?.schedule ?? "Once daily", primaryFood))
+  );
+
   const finalDosage = selectedDosagePreset === "Custom" ? customDosage.trim() : selectedDosagePreset;
   const finalSchedule = selectedSchedulePreset === "Custom" ? customSchedule.trim() : selectedSchedulePreset;
   const finalDurationDays = durationPreset === "Custom" ? Number(customDuration) : Number(durationPreset);
+  const slotCount = medicationSlotCount(finalSchedule, primaryFood);
 
+  // Keep the custom-reminder inputs in step with however many slots the
+  // current schedule implies, so there's always one time field per dose.
+  const lastSlotCount = useRef(slotCount);
+  if (lastSlotCount.current !== slotCount) {
+    lastSlotCount.current = slotCount;
+    const defaults = defaultTimesPreview(slotCount);
+    setReminderInputs((inputs) => defaults.map((def, i) => inputs[i] ?? def));
+  }
   async function save() {
     if (!activePetId || !name.trim() || !startDate || !finalDurationDays) return;
     setSaving(true);
+    const finalReminderTimes = useCustomReminders ? reminderInputs.map((t) => t.trim()).filter(Boolean) : undefined;
     if (medication) {
-      const patch = { name: name.trim(), dosage: finalDosage, schedule: finalSchedule, startDate, durationDays: finalDurationDays };
+      const patch = { name: name.trim(), dosage: finalDosage, schedule: finalSchedule, startDate, durationDays: finalDurationDays, reminderTimes: finalReminderTimes };
       updateMedication(activePetId, medication.id, patch);
       try {
         await updateRemoteMedication({ ...medication, ...patch });
@@ -60,6 +79,9 @@ export default function AddMedication() {
       return;
     }
     const entry = addMedication(activePetId, name.trim(), finalDosage, finalSchedule, startDate, finalDurationDays, params.appointmentId);
+    if (finalReminderTimes?.length) {
+      updateMedication(activePetId, entry.id, { reminderTimes: finalReminderTimes });
+    }
     try {
       const remoteId = await insertMedication(activePetId, entry);
       syncMedicationId(activePetId, entry.id, remoteId);
@@ -187,6 +209,34 @@ export default function AddMedication() {
             return end.toLocaleDateString([], { month: "short", day: "numeric" });
           })()}
         </Text>
+      )}
+
+      <Text style={styles.label}>Dose reminders</Text>
+      <View style={styles.chipRow}>
+        <Pressable onPress={() => setUseCustomReminders(false)} style={[styles.chip, !useCustomReminders && styles.chipSelected]}>
+          <Text style={[styles.chipText, !useCustomReminders && styles.chipTextSelected]}>Auto</Text>
+        </Pressable>
+        <Pressable onPress={() => setUseCustomReminders(true)} style={[styles.chip, useCustomReminders && styles.chipSelected]}>
+          <Text style={[styles.chipText, useCustomReminders && styles.chipTextSelected]}>Custom times</Text>
+        </Pressable>
+      </View>
+      {!useCustomReminders ? (
+        <Text style={styles.durationHint}>
+          We'll remind you at {defaultTimesPreview(slotCount).join(", ")}, every day the course is active.
+        </Text>
+      ) : (
+        <View style={{ marginBottom: 4 }}>
+          {reminderInputs.slice(0, slotCount).map((t, i) => (
+            <TextInput
+              key={i}
+              value={t}
+              onChangeText={(v) => setReminderInputs((inputs) => inputs.map((x, idx) => (idx === i ? v : x)))}
+              placeholder={`Dose ${i + 1} time (e.g. 9:00 AM)`}
+              placeholderTextColor={colors.outlineVariant}
+              style={styles.input}
+            />
+          ))}
+        </View>
       )}
 
       <View style={{ height: 16 }} />

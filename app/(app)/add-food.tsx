@@ -11,6 +11,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { colors, fonts } from "@/theme/tokens";
 import { insertFood, updateFood as updateRemoteFood } from "@/lib/supabase";
 import { safeBack } from "@/lib/navigation";
+import { defaultTimesPreview } from "@/lib/notifications";
 import type { FoodCategory, FoodItem } from "@/types";
 
 export default function AddFood() {
@@ -33,18 +34,35 @@ export default function AddFood() {
     }
   );
   const [saving, setSaving] = useState(false);
+  const [useCustomReminders, setUseCustomReminders] = useState(!!existing?.reminderTimes?.length);
+  const [reminderInputs, setReminderInputs] = useState<string[]>(
+    existing?.reminderTimes?.length ? existing.reminderTimes : defaultTimesPreview(existing?.mealsPerDay ?? 2)
+  );
 
   function patch(p: Partial<FoodItem>) {
-    setDraft((d) => ({ ...d, ...p }));
+    setDraft((d) => {
+      const next = { ...d, ...p };
+      // Keep the custom-reminder inputs in step with meal count so there's
+      // always exactly one time field per meal.
+      if (p.mealsPerDay !== undefined && p.mealsPerDay !== d.mealsPerDay) {
+        setReminderInputs((inputs) => {
+          const defaults = defaultTimesPreview(p.mealsPerDay!);
+          return defaults.map((def, i) => inputs[i] ?? def);
+        });
+      }
+      return next;
+    });
   }
 
   async function save() {
     if (!activePetId || !draft.foodName.trim() || !draft.dailyGrams.trim()) return;
     setSaving(true);
+    const finalReminderTimes = useCustomReminders ? reminderInputs.map((t) => t.trim()).filter(Boolean) : undefined;
+    const toSave: FoodItem = { ...draft, reminderTimes: finalReminderTimes };
     if (existing) {
-      updateFoodItem(activePetId, existing.id, draft);
+      updateFoodItem(activePetId, existing.id, toSave);
       try {
-        await updateRemoteFood(draft);
+        await updateRemoteFood(toSave);
       } catch {
         // local edit is retained while offline
       }
@@ -52,8 +70,8 @@ export default function AddFood() {
       safeBack("/(app)/(tabs)/inventory");
       return;
     }
-    const entry = addFoodToPet(activePetId, draft.category);
-    const finalized: FoodItem = { ...draft, id: entry.id };
+    const entry = addFoodToPet(activePetId, toSave.category);
+    const finalized: FoodItem = { ...toSave, id: entry.id };
     updateFoodItem(activePetId, entry.id, finalized);
     try {
       const remoteId = await insertFood(activePetId, finalized);
@@ -113,6 +131,32 @@ export default function AddFood() {
           </>
         )}
 
+        <Text style={styles.label}>Feeding reminders</Text>
+        <View style={styles.chipRow}>
+          <Chip label="Auto" active={!useCustomReminders} onPress={() => setUseCustomReminders(false)} />
+          <Chip label="Custom times" active={useCustomReminders} onPress={() => setUseCustomReminders(true)} />
+        </View>
+        {!useCustomReminders ? (
+          <Text style={styles.sublabel}>
+            We'll remind you at {defaultTimesPreview(draft.mealsPerDay).join(", ")} — spread evenly across the day.
+          </Text>
+        ) : (
+          <View style={{ marginBottom: 4 }}>
+            {reminderInputs.slice(0, draft.mealsPerDay).map((t, i) => (
+              <TextInput
+                key={i}
+                value={t}
+                onChangeText={(v) =>
+                  setReminderInputs((inputs) => inputs.map((x, idx) => (idx === i ? v : x)))
+                }
+                placeholder={`Meal ${i + 1} time (e.g. 8:00 AM)`}
+                placeholderTextColor={colors.outlineVariant}
+                style={styles.input}
+              />
+            ))}
+          </View>
+        )}
+
         <View style={{ height: 16 }} />
         <PrimaryButton
           label={saving ? "Saving…" : existing ? "Save changes" : "Add food"}
@@ -139,4 +183,8 @@ const styles = StyleSheet.create({
   },
   amountInput: { flex: 1, fontFamily: fonts.mono, fontSize: 20, color: colors.ink },
   amountUnit: { fontFamily: fonts.mono, fontSize: 13, color: colors.inkSoft },
+  input: {
+    borderWidth: 1.5, borderColor: colors.border, borderRadius: 12, backgroundColor: colors.surface,
+    paddingVertical: 12, paddingHorizontal: 16, fontFamily: fonts.body, fontSize: 14.5, color: colors.ink, marginBottom: 8,
+  },
 });

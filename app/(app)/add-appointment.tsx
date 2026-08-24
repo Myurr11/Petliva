@@ -11,6 +11,15 @@ import { insertAppointment, updateAppointment as updateRemoteAppointment } from 
 import { safeBack } from "@/lib/navigation";
 
 const TIME_PRESETS = ["09:00 AM", "10:30 AM", "02:00 PM", "04:30 PM", "Custom"];
+const REMINDER_PRESETS: { label: string; minutes: number }[] = [
+  { label: "1 day before", minutes: 1440 },
+  { label: "3 hr before", minutes: 180 },
+  { label: "2 hr before", minutes: 120 },
+  { label: "1 hr before", minutes: 60 },
+  { label: "30 min before", minutes: 30 },
+  { label: "15 min before", minutes: 15 },
+];
+const DEFAULT_REMINDER_OFFSETS = [120, 30];
 
 export default function AddAppointment() {
   const params = useLocalSearchParams<{ date?: string; appointmentId?: string }>();
@@ -29,7 +38,14 @@ export default function AddAppointment() {
   const [doctorName, setDoctorName] = useState(appointment?.doctorName ?? "");
   const [phoneNo, setPhoneNo] = useState(appointment?.phoneNo ?? "");
   const [note, setNote] = useState(appointment?.note ?? "");
+  const [reminderOffsets, setReminderOffsets] = useState<number[]>(appointment?.reminderOffsetsMinutes ?? DEFAULT_REMINDER_OFFSETS);
   const [saving, setSaving] = useState(false);
+
+  function toggleReminder(minutes: number) {
+    setReminderOffsets((offsets) =>
+      offsets.includes(minutes) ? offsets.filter((m) => m !== minutes) : [...offsets, minutes].sort((a, b) => b - a)
+    );
+  }
 
   const finalTime = selectedTimePreset === "Custom" ? customTime.trim() : selectedTimePreset;
 
@@ -37,7 +53,7 @@ export default function AddAppointment() {
     if (!activePetId || !date.trim()) return;
     setSaving(true);
     if (appointment) {
-      const patch = { date: date.trim(), note: note.trim(), time: finalTime, hospitalName: hospitalName.trim(), doctorName: doctorName.trim(), phoneNo: phoneNo.trim() };
+      const patch = { date: date.trim(), note: note.trim(), time: finalTime, hospitalName: hospitalName.trim(), doctorName: doctorName.trim(), phoneNo: phoneNo.trim(), reminderOffsetsMinutes: reminderOffsets };
       updateAppointment(activePetId, appointment.id, patch);
       try {
         await updateRemoteAppointment({ ...appointment, ...patch });
@@ -49,6 +65,9 @@ export default function AddAppointment() {
       return;
     }
     const entry = addAppointment(activePetId, date.trim(), note.trim(), finalTime, hospitalName.trim(), doctorName.trim(), phoneNo.trim());
+    if (JSON.stringify(reminderOffsets) !== JSON.stringify(DEFAULT_REMINDER_OFFSETS)) {
+      updateAppointment(activePetId, entry.id, { reminderOffsetsMinutes: reminderOffsets });
+    }
     try {
       const remoteId = await insertAppointment(activePetId, entry);
       // Swap the local temp id for the real one so a future delete can
@@ -138,6 +157,24 @@ export default function AddAppointment() {
           style={styles.input}
         />
 
+        <Text style={styles.label}>Remind me</Text>
+        <Text style={styles.sublabel}>Default is 2 hours and 30 minutes before — tap to add or remove reminders.</Text>
+        <View style={styles.chipRow}>
+          {REMINDER_PRESETS.map((preset) => {
+            const isSelected = reminderOffsets.includes(preset.minutes);
+            return (
+              <Pressable
+                key={preset.minutes}
+                onPress={() => toggleReminder(preset.minutes)}
+                style={[styles.chip, isSelected && styles.chipSelected]}
+              >
+                <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>{preset.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        {reminderOffsets.length === 0 && <Text style={styles.sublabel}>No reminders will be sent for this appointment.</Text>}
+
         <View style={{ height: 16 }} />
         <PrimaryButton
           label={saving ? "Saving…" : appointment ? "Save changes" : "Save appointment"}
@@ -156,6 +193,7 @@ const styles = StyleSheet.create({
   title: { fontFamily: fonts.display, fontSize: 19, color: colors.ink },
   closeBtn: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 2, borderColor: colors.ink, padding: 6 },
   label: { fontFamily: fonts.labelBold, fontSize: 13.5, color: colors.ink, marginBottom: 8, marginTop: 10 },
+  sublabel: { fontFamily: fonts.body, fontSize: 11.5, color: colors.inkSoft, marginTop: -6, marginBottom: 10 },
   input: {
     borderWidth: 1.5, borderColor: colors.border, borderRadius: 12, backgroundColor: colors.surface,
     paddingVertical: 12, paddingHorizontal: 16, fontFamily: fonts.body, fontSize: 14.5, color: colors.ink, marginBottom: 8,
