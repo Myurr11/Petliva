@@ -27,11 +27,10 @@ Captured on-device via Expo Go, in the order they appear in the actual flow: sig
 <td align="center"><img src="docs/screenshots/06-onboarding-weight.jpg" width="180"/><br/>5. Weight</td>
 </tr><tr>
 <td align="center"><img src="docs/screenshots/07-onboarding-vaccinations.jpg" width="180"/><br/>6. Vaccinations</td>
-<td align="center"><img src="docs/screenshots/08-onboarding-medical-history.jpg" width="180"/><br/>8. Medical history</td>
+<td align="center"><img src="docs/screenshots/08-onboarding-medical-history.jpg" width="180"/><br/>7. Medical history</td>
 <td align="center"><img src="docs/screenshots/09-onboarding-vet-care.jpg" width="180"/><br/>8. Vet care</td>
 <td align="center"><img src="docs/screenshots/10-onboarding-food-1.jpg" width="180"/><br/>9. Dry Food</td>
 <td align="center"><img src="docs/screenshots/10-onboarding-food-2.jpg" width="180"/><br/>10. Wet Food</td>
-<td></td>
 </tr></table>
 
 ### Home
