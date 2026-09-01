@@ -22,54 +22,60 @@ Captured on-device via Expo Go, in the order they appear in the actual flow: sig
 <table><tr>
 <td align="center"><img src="docs/screenshots/03-onboarding-profile.jpg" width="180"/><br/>1. Name & type</td>
 <td align="center"><img src="docs/screenshots/04-onboarding-breed.jpg" width="180"/><br/>2. Breed</td>
-<td align="center"><img src="docs/screenshots/05-onboarding-age.jpg" width="180"/><br/>3. Age</td>
-<td align="center"><img src="docs/screenshots/06-onboarding-weight.jpg" width="180"/><br/>4. Weight</td>
+<td align="center"><img src="docs/screenshots/05-onboarding-age-1.jpg" width="180"/><br/>3. Age</td>
+<td align="center"><img src="docs/screenshots/05-onboarding-age-2.jpg" width="180"/><br/>4. Age Selector</td>
+<td align="center"><img src="docs/screenshots/06-onboarding-weight.jpg" width="180"/><br/>5. Weight</td>
 </tr><tr>
-<td align="center"><img src="docs/screenshots/07-onboarding-vaccinations.jpg" width="180"/><br/>5. Vaccinations</td>
-<td align="center"><img src="docs/screenshots/08-onboarding-medical-history.jpg" width="180"/><br/>6. Medical history</td>
-<td align="center"><img src="docs/screenshots/09-onboarding-vet-care.jpg" width="180"/><br/>7. Vet care</td>
+<td align="center"><img src="docs/screenshots/07-onboarding-vaccinations.jpg" width="180"/><br/>6. Vaccinations</td>
+<td align="center"><img src="docs/screenshots/08-onboarding-medical-history.jpg" width="180"/><br/>8. Medical history</td>
+<td align="center"><img src="docs/screenshots/09-onboarding-vet-care.jpg" width="180"/><br/>8. Vet care</td>
+<td align="center"><img src="docs/screenshots/10-onboarding-food-1.jpg" width="180"/><br/>9. Dry Food</td>
+<td align="center"><img src="docs/screenshots/10-onboarding-food-2.jpg" width="180"/><br/>10. Wet Food</td>
 <td></td>
 </tr></table>
 
 ### Home
 
 <table><tr>
-<td align="center"><img src="docs/screenshots/10-home-dry-food.jpg" width="200"/><br/>Dry food ring + reminders</td>
-<td align="center"><img src="docs/screenshots/11-home-wet-food.jpg" width="200"/><br/>Wet food ring (swipe page)</td>
+<td align="center"><img src="docs/screenshots/11-home-dry-food.jpg" width="200"/><br/>Dry food ring + reminders</td>
+<td align="center"><img src="docs/screenshots/12-home-wet-food-1.jpg" width="200"/><br/>Wet food ring (swipe page)</td>
+<td align="center"><img src="docs/screenshots/12-home-wet-food-2.jpg" width="200"/><br/>Wet food Log Details</td>
 </tr></table>
 
 ### Food logging
 
 <table><tr>
-<td align="center"><img src="docs/screenshots/12-log-a-feeding.jpg" width="200"/><br/>Log a feeding</td>
+<td align="center"><img src="docs/screenshots/13-log-a-feeding.jpg" width="200"/><br/>Log a feeding</td>
 </tr></table>
 
 ### Insights
 
 <table><tr>
-<td align="center"><img src="docs/screenshots/13-insights.jpg" width="200"/><br/>7-day chart + calendar + daily progress</td>
+<td align="center"><img src="docs/screenshots/14-insights-1.jpg" width="200"/><br/>Dru Food 7-day chart + calendar + daily progress</td>
+<td align="center"><img src="docs/screenshots/15-insights-2.jpg" width="200"/><br/>Wet Food 7-day chart + calendar + daily progress</td>
+<td align="center"><img src="docs/screenshots/16-insights-3.jpg" width="200"/><br/>Breakdown 7-day chart + calendar + daily progress</td>
 </tr></table>
 
 ### Vet
 
 <table><tr>
-<td align="center"><img src="docs/screenshots/14-vet-tab.jpg" width="200"/><br/>Vet tab overview</td>
-<td align="center"><img src="docs/screenshots/15-add-vet-appointment.jpg" width="200"/><br/>Add appointment</td>
-<td align="center"><img src="docs/screenshots/16-add-medication.jpg" width="200"/><br/>Add medication</td>
-<td align="center"><img src="docs/screenshots/17-vet-visit-detail.jpg" width="200"/><br/>Visit detail (diagnosis/notes)</td>
+<td align="center"><img src="docs/screenshots/17-vet-tab.jpg" width="200"/><br/>Vet tab overview</td>
+<td align="center"><img src="docs/screenshots/18-add-vet-appointment.jpg" width="200"/><br/>Add appointment</td>
+<td align="center"><img src="docs/screenshots/19-add-medication.jpg" width="200"/><br/>Add medication</td>
+<td align="center"><img src="docs/screenshots/20-vet-visit-detail.jpg" width="200"/><br/>Visit detail (diagnosis/notes)</td>
 </tr></table>
 
 ### Food
 
 <table><tr>
-<td align="center"><img src="docs/screenshots/18-food-tab.jpg" width="200"/><br/>Inventory + stock</td>
-<td align="center"><img src="docs/screenshots/19-log-a-restock.jpg" width="200"/><br/>Log a restock</td>
+<td align="center"><img src="docs/screenshots/21-food-tab.jpg" width="200"/><br/>Inventory + stock</td>
+<td align="center"><img src="docs/screenshots/22-log-a-restock.jpg" width="200"/><br/>Log a restock</td>
 </tr></table>
 
 ### Profile
 
 <table><tr>
-<td align="center"><img src="docs/screenshots/20-profile.jpg" width="200"/><br/>Pets, health summary, sign out</td>
+<td align="center"><img src="docs/screenshots/23-profile.jpg" width="200"/><br/>Pets, health summary, sign out</td>
 </tr></table>
 
 ## Features
